@@ -47,21 +47,26 @@ def fixFilenames(config):
                 print(f'Cannot fix name of assignment {m} for {student} because there is more than one matching file')
             elif len(candidates) == 1:
                 c = candidates[0]
+                # Windows
                 shell.run(['mv', '-i', shell.pjoin(d, c), shell.pjoin(d, m)])
 
 
-def addComment(config):
-    root_path = config.baseDir
-    pattern = config.submissionFileGlob
-    start = config.lineCommentStart()
-    for root, dirs, files in os.walk(root_path):
-        for filename in fnmatch.filter(files, pattern):
-            file_path = os.path.join(root, filename)
-            try:
-                data = readFile(file_path)
-                writeFile(file_path, f'{start}Anmerkungen (Dozent/Tutor*in):\n{start}-\n\n\n' + data)
-            except Exception:
-                pass
+def addComment(cfg):
+    submissionDirs = collectSubmissionDirs(cfg)
+    print(submissionDirs)
+    for d in submissionDirs:
+        p = shell.pjoin(d, cfg.commentsFile)
+        verbose(f'Writing file {p}')
+        writeFile(p, """In dieser Datei stehen allgemeine Kommentare zur Abgabe.
+
+Die Bewertung finden Sie in der Datei POINTS.txt.
+
+Möglicherweise enthalten die Quelldateien aufgaben-spezifische Kommentare. Diese sind mit TUTOR/TUTORIN oder
+DOZENT/DOZENTIN gekennzeichnet.
+
+=============================================================================================================
+
+""")
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='Check student submissions')
@@ -77,16 +82,16 @@ def parseArgs():
                         help='Filename extension for test cases and submissions. Per default: the unique extension ' +
                              'of all files in the test directory')
     subparsers = parser.add_subparsers(help='Commands', dest='cmd')
-    checkFilenames = subparsers.add_parser('checkFilenames', help='check that all solutions are placed in the right files')
-    fixFilenames = subparsers.add_parser('fixFilenames', help='try to file that filenames of solutions')
-    checkPlagiarism = subparsers.add_parser('checkPlagiarism', help='run a check against plagiarism')
+    checkFilenames = subparsers.add_parser('checkFilenames', help='Check that all solutions are placed in the right files')
+    fixFilenames = subparsers.add_parser('fixFilenames', help='Try to fix the names of the solution files')
+    checkPlagiarism = subparsers.add_parser('checkPlagiarism', help='Run a check against plagiarism')
     checkPlagiarism.add_argument('--threshold', metavar='N', type=int, required=True,
                                  help='Similarity in percentage when two files are considered equal in the sense of plagiarism')
     checkPlagiarism.add_argument('--ignore', metavar='FILES', type=str, required=False,
                                  help='Ignore these assignment files when checking plagiarism')
-    unzip = subparsers.add_parser('unzip', help='unzip all files')
-    addComment = subparsers.add_parser('addComment', help='add comment to all submitted source code files')
-    runTests = subparsers.add_parser('runTests', help='run the tests')
+    unzip = subparsers.add_parser('unzip', help='Unzip all files downloaded from moodle')
+    addComment = subparsers.add_parser('addComment', help='Add a file COMMENTS.txt to all student directories')
+    runTests = subparsers.add_parser('runTests', help='Run the tests, do interactive grading')
     runTests.add_argument('filesOrDirs', metavar='FILE_OR_DIR', type=str, nargs='*',
                           help='The student files or directories to run the tests for.')
     runTests.add_argument('--only-syntax', help='Only check syntax', action='store_true', dest='onlySyntax')
@@ -95,12 +100,13 @@ def parseArgs():
     runTests.add_argument('--cmd',
                           help='Custom test command, gets passed the submitted file and the corresponding test in the test directory',
                           metavar='FILE', dest='testCmd')
-    importCmd = subparsers.add_parser('import', help='Import a .csv file to produce an Excel spreadsheet')
+    importCmd = subparsers.add_parser('import', help='Import a .csv file from moodle to produce an Excel spreadsheet for rating')
     importCmd.add_argument('--points', dest='points', metavar='POINTS', type=str, required=True,
                            help='A comma-separated list of points per assigment.')
     importCmd.add_argument('file', metavar='CSV_FILE', type=str,
                            help='A .csv file from moodle')
-    export = subparsers.add_parser('export', help='Generate a POINTS.txt file for each student and a single .csv file for uploading in moodle')
+    export = subparsers.add_parser('export',
+                                   help='From rating.xlsx, generate a POINTS.txt file for each student and a single .csv file for uploading in moodle')
     return parser.parse_args()
 
 def main():

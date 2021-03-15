@@ -44,7 +44,6 @@ STATUS_COL = 'Status'
 ID_COL = 'ID'
 RATING_COL = 'Bewertung'
 NAME_COL = 'Vollständiger Name'
-POINTS_FILE = 'POINTS.txt'
 
 def loadShpreadsheet(name):
     import openpyxl as exc
@@ -56,7 +55,7 @@ def loadShpreadsheet(name):
         return wb
 
 def export(cfg):
-    f = cfg.spreadsheetPath()
+    f = cfg.spreadsheetPath
     wb = loadShpreadsheet(f)
     sheetnames = wb.sheetnames
     if len(sheetnames) == 0:
@@ -92,8 +91,8 @@ def export(cfg):
         abort(f'No colum {RATING_COL} found in {f}')
     # write POINTS.txt file
     pointsTemplate = ''
-    if os.path.isfile(cfg.pointsTemplate()):
-        pointsTemplate = utils.readFile(cfg.pointsTemplate()).strip()
+    if os.path.isfile(cfg.pointsTemplate):
+        pointsTemplate = utils.readFile(cfg.pointsTemplate).strip()
         if pointsTemplate:
             pointsTemplate = pointsTemplate + "\n\n"
     for student in values[1:]:
@@ -112,11 +111,11 @@ def export(cfg):
         if not d:
             warn(f'No submission directory for student with ID {studentId}')
         else:
-            f = shell.pjoin(d, POINTS_FILE)
+            f = shell.pjoin(d, cfg.pointsFile)
             writeFile(f, pointsTemplate + '\n'.join(lines))
             verbose(f'Wrote {f}')
     # write .csv file
-    ratingCsv = cfg.ratingCsvPath()
+    ratingCsv = cfg.ratingCsvPath
     with open(ratingCsv, 'w', encoding='utf-8') as csvfile:
         w = csv.writer(csvfile, quoting=csv.QUOTE_MINIMAL)
         for v in values:

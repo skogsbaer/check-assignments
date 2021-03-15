@@ -194,9 +194,6 @@ def runTests(cfg, args):
         if shell.isfile(fileOrDir):
             interactiveLoop(cfg, args, fileOrDir)
         else:
-            tutorDir = shell.pjoin(fileOrDir, 'TUTOR')
-            if not shell.isDir(tutorDir):
-                shell.mkdir(tutorDir)
             files = collectSubmissionFiles(cfg, fileOrDir)
             if not files:
                 print(f'No submission files in {fileOrDir} for configuration {cfg}')

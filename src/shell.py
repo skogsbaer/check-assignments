@@ -240,6 +240,7 @@ THIS_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 basename = os.path.basename
 filename = os.path.basename
 dirname = os.path.dirname
+abspath = os.path.abspath
 
 exists = os.path.exists
 
@@ -267,12 +268,20 @@ pjoin = os.path.join
 mv = os.rename
 
 def cp(src, target):
-    if isDir(target):
-        fname = basename(src)
-        targetfile = pjoin(target, fname)
+    if isFile(src):
+        if isDir(target):
+            fname = basename(src)
+            targetfile = pjoin(target, fname)
+        else:
+            targetfile = target
+        return shutil.copyfile(src, targetfile)
     else:
-        targetfile = target
-    return shutil.copyfile(src, targetfile)
+        if isDir(target):
+            name = basename(src)
+            targetDir = pjoin(target, name)
+            return shutil.copytree(src, targetDir)
+        else:
+            raise ValueError(f'Cannot copy directory {src} to non-directory {target}')
 
 def abort(msg):
     sys.stderr.write('ERROR: ' + msg + '\n')
@@ -314,10 +323,11 @@ def mkTempDir(suffix='', prefix='tmp', dir=None, deleteAtExit=True):
     return d
 
 class tempDir:
-    def __init__(self, suffix='', prefix='tmp', dir=None):
+    def __init__(self, suffix='', prefix='tmp', dir=None, onException=True):
         self.suffix = suffix
         self.prefix = prefix
         self.dir = dir
+        self.onException = onException
     def __enter__(self):
         self.dir_to_delete = mkTempDir(suffix=self.suffix,
                                        prefix=self.prefix,
@@ -325,6 +335,8 @@ class tempDir:
                                        deleteAtExit=False)
         return self.dir_to_delete
     def __exit__(self, exc_type, value, traceback):
+        if exc_type is not None and not self.onException:
+            return False # reraise
         rmdir(self.dir_to_delete, recursive=True)
         return False # reraise expection
 

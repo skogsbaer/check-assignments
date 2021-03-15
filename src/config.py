@@ -20,22 +20,40 @@ class Config:
         self.submissionFileGlob = '*' + (fileExt if fileExt else "")
         self.feedbackZip = 'feedback.zip'
         self.lang = 'de'
+
+    @property
     def spreadsheetPath(self):
         return shell.pjoin(self.baseDir, 'rating.xlsx')
+
+    @property
     def ratingCsvPath(self):
         return shell.pjoin(self.baseDir, 'rating.csv')
+
+    @property
     def lineCommentStart(self):
         if self.fileExt == '.py':
             return '# '
         elif self.fileExt == '.hs':
             return '-- '
+
+    @property
     def editor(self):
         if os.environ.get('USER') == 'swehr':
             return 'edi' # special case
         else:
             return os.environ.get('EDITOR') or os.environ.get('VISUAL') or 'vim'
+
+    @property
     def pointsTemplate(self):
         return shell.pjoin(self.baseDir, 'POINTS_template.txt')
+
+    @property
+    def pointsFile(self):
+        return 'POINTS.txt'
+
+    @property
+    def commentsFile(self):
+        return 'COMMENTS.txt'
 
 def getAssignments(testDir, fileExt=None):
     if fileExt is None:

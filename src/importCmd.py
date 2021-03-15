@@ -45,9 +45,9 @@ def importCmd(cfg, args):
         if col == STATUS_COL:
             statusColIdx = i
     if ratingColIdx < 0:
-        abort(f'No column {RATING_COL} found in {args.csvFile}')
+        abort(f'No column {RATING_COL} found in {args.csvFile}. Rows: {csvRows[0]}')
     if nameColIdx < 0:
-        abort(f'No column {NAME_COL} found in {args.csvFile}')
+        abort(f'No column {NAME_COL} found in {args.csvFile}. Rows: {csvRows[0]}')
     contentCsvRows = csvRows[1:]
     contentCsvRows.sort(key=projectLastName(nameColIdx))
     sortedCsvRows = [csvRows[0]] + contentCsvRows
@@ -79,4 +79,4 @@ def importCmd(cfg, args):
     ws = wb.active
     for r in newRows:
         ws.append(r)
-    wb.save(cfg.spreadsheetPath())
+    wb.save(cfg.spreadsheetPath)
