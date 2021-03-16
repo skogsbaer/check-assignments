@@ -73,14 +73,6 @@ def parseArgs():
     parser.add_argument('--verbose', help='Be more verbose', action='store_true')
     parser.add_argument('--baseDir', metavar='DIR', type=str, required=False,
                         help='Directory with tests for the assignment. Default: current directory')
-    parser.add_argument('--testDir', metavar='DIR', type=str, required=False,
-                        help='Directory with tests for the assignment. Default: $BASE/tests')
-    parser.add_argument('--assignments', metavar='FILENAMES', type=str, required=False,
-                        help='List of file names (comma-separated) expected for solutions of assignments. ' +
-                             f'Default: files in test directory (they must have the same extension).')
-    parser.add_argument('--fileExt', metavar='EXT', type=str, required=False,
-                        help='Filename extension for test cases and submissions. Per default: the unique extension ' +
-                             'of all files in the test directory')
     subparsers = parser.add_subparsers(help='Commands', dest='cmd')
     checkFilenames = subparsers.add_parser('checkFilenames', help='Check that all solutions are placed in the right files')
     fixFilenames = subparsers.add_parser('fixFilenames', help='Try to fix the names of the solution files')
@@ -92,14 +84,11 @@ def parseArgs():
     unzip = subparsers.add_parser('unzip', help='Unzip all files downloaded from moodle')
     addComment = subparsers.add_parser('addComment', help='Add a file COMMENTS.txt to all student directories')
     runTests = subparsers.add_parser('runTests', help='Run the tests, do interactive grading')
-    runTests.add_argument('filesOrDirs', metavar='FILE_OR_DIR', type=str, nargs='*',
-                          help='The student files or directories to run the tests for.')
-    runTests.add_argument('--only-syntax', help='Only check syntax', action='store_true', dest='onlySyntax')
+    runTests.add_argument('dirs', metavar='DIR', type=str, nargs='*',
+                          help='The student directories to run the tests for.')
+    runTests.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
     runTests.add_argument('--interactive', help='Run the tests interactively', action='store_true', dest='interactive')
     runTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
-    runTests.add_argument('--cmd',
-                          help='Custom test command, gets passed the submitted file and the corresponding test in the test directory',
-                          metavar='FILE', dest='testCmd')
     importCmd = subparsers.add_parser('import', help='Import a .csv file from moodle to produce an Excel spreadsheet for rating')
     importCmd.add_argument('--points', dest='points', metavar='POINTS', type=str, required=True,
                            help='A comma-separated list of points per assigment.')
@@ -114,14 +103,11 @@ def main():
     args = parseArgs()
     if args.verbose:
         enableVerboseLogging()
-    assignments = None
-    if args.assignments:
-        assignments = [x.strip() for x in args.assignments.split(',') if x.strip()]
     if args.baseDir:
         baseDir = args.baseDir
     else:
         baseDir = shell.pwd()
-    config = mkConfig(baseDir, fileExt=args.fileExt, assignments=assignments, testDir=args.testDir)
+    config = mkConfig(baseDir)
     if args.cmd == 'checkFilenames':
         checkFilenames(config)
     elif args.cmd == 'checkPlagiarism':
@@ -134,7 +120,11 @@ def main():
     elif args.cmd == 'addComment':
         addComment(config)
     elif args.cmd == 'runTests':
-        a = testCmd.TestArgs(args.filesOrDirs, args.onlySyntax, args.interactive, stripSlashes(args.startAt), args.testCmd)
+        if args.assignments:
+            assignments = args.assignments.split(',')
+        else:
+            assignments = []
+        a = testCmd.TestArgs(args.dirs, assignments, args.interactive, stripSlashes(args.startAt))
         testCmd.runTests(config, a)
     elif args.cmd == 'export':
         exportCmd.export(config)

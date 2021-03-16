@@ -1,0 +1,11 @@
+assignments:
+  1:
+    points: 4
+    kind: python
+    main-file: "assignment_01.py"
+    test-files: "Test-01.py" # inside tests/
+  2:
+    points: 4
+    kind: java
+    gradle-file: "02.gradle"
+    test-files: ["assignment_02/TutorTest.java"]
