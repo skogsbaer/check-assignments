@@ -90,8 +90,9 @@ def parseArgs():
     runTests.add_argument('--interactive', help='Run the tests interactively', action='store_true', dest='interactive')
     runTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
     importCmd = subparsers.add_parser('import', help='Import a .csv file from moodle to produce an Excel spreadsheet for rating')
-    importCmd.add_argument('file', metavar='CSV_FILE', type=str,
-                           help='A .csv file from moodle')
+    importCmd.add_argument('file', metavar='CSV_FILE', type=str, help='A .csv file from moodle')
+    prepareCmd = subparsers.add_parser('prepare', help='Shortcut for import+unzip+addComment')
+    prepareCmd.add_argument('file', metavar='CSV_FILE', type=str, help='A .csv file from moodle')
     export = subparsers.add_parser('export',
                                    help='From rating.xlsx, generate a POINTS.txt file for each student and a single .csv file for uploading in moodle')
     return parser.parse_args()
@@ -113,9 +114,17 @@ def main():
         plagiarismCmd.checkPlagiarism(config, a)
     elif args.cmd == 'fixFilenames':
         fixFilenames(config)
+    elif args.cmd == 'import':
+        importArgs = importCmd.ImportArgs(args.file)
+        importCmd.importCmd(config, importArgs)
     elif args.cmd == 'unzip':
         unzipCmd.unzip(config)
     elif args.cmd == 'addComment':
+        addComment(config)
+    elif args.cmd == 'prepare':
+        importArgs = importCmd.ImportArgs(args.file)
+        importCmd.importCmd(config, importArgs)
+        unzipCmd.unzip(config)
         addComment(config)
     elif args.cmd == 'runTests':
         if args.assignments:
@@ -126,9 +135,6 @@ def main():
         testCmd.runTests(config, a)
     elif args.cmd == 'export':
         exportCmd.export(config)
-    elif args.cmd == 'import':
-        importArgs = importCmd.ImportArgs(args.file)
-        importCmd.importCmd(config, importArgs)
     elif not args.cmd:
         warn('No command given!')
     else:
