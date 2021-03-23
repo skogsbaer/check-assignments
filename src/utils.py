@@ -58,3 +58,24 @@ def stripSlashes(x):
         return stripSlashes(x[:-1])
     else:
         return x
+
+def hasSameContent(f1, f2):
+    c1 = readBinaryFile(f1)
+    c2 = readBinaryFile(f2)
+    return c1 == c2
+
+# Copies srcDir/path to targetDir/path, but only if targetDir/path does not exist.
+# Outputs a warning if targetDir/path exists but is not identical to srcDir/path
+def copyFileIfNotExists(srcDir, path, targetDir):
+    srcPath = shell.pjoin(srcDir, path)
+    if not shell.isFile(srcPath):
+        raise IOError(f'{srcPath} must be a file')
+    tgtPath = shell.pjoin(targetDir, path)
+    if shell.isDir(tgtPath):
+        raise IOError(f'{tgtPath} must not be a directory')
+    shell.mkdir(shell.dirname(tgtPath), createParents=True)
+    if shell.isFile(tgtPath):
+        if not hasSameContent(srcPath, tgtPath):
+            raise IOError(f'Target file {tgtPath} already exists with content different than in {srcPath}')
+    else:
+        shell.cp(srcPath, tgtPath)

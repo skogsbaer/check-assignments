@@ -24,7 +24,7 @@ with shell.tempDir(onException=False) as tmp:
     shell.cd('test-data/submissions')
 
     print('### import ###')
-    shell.run(['python3', checkAssignments, 'import', '--points', '1,2,3', '../rating-moodle.csv'])
+    shell.run(['python3', checkAssignments, 'import', '../rating-moodle.csv'])
     assertExists('rating.xlsx')
 
     print('### unzip ###')

@@ -1,0 +1,37 @@
+plugins {
+	id 'java'
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["${studentDir}/src"]
+        }
+    }
+    test {
+         java {
+              srcDirs = ["${studentDir}/src", "${testDir}/src"]
+          }
+    }
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	testImplementation('org.junit.jupiter:junit-jupiter:5.6.0')
+	implementation('org.junit.jupiter:junit-jupiter:5.6.0')
+        testImplementation("junit:junit:4.12")
+        implementation("junit:junit:4.12")
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events "passed", "skipped", "failed"
+	}
+        filter {
+            includeTestsMatching "${testFilter}"
+        }
+}

@@ -7,5 +7,4 @@ assignments:
   2:
     points: 4
     kind: java
-    gradle-file: "02.gradle"
-    test-files: ["assignment_02/TutorTest.java"]
+    test-filter: "assignment_02.*"

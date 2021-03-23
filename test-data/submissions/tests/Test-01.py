@@ -6,4 +6,3 @@ class TutorTest(unittest.TestCase):
 
 if __name__ == '__wypp__':
     res = unittest.main(argv=['unused'])
-    print(dir(res))

@@ -3,6 +3,19 @@ from utils import *
 import tempfile
 import zipfile
 
+STOP_DIRS = ['src']
+IGNORE_DIRS = ['bin', 'build']
+
+def getExtractedFiles(d):
+    extractedFiles = [f for f in shell.ls(d, '*') if shell.basename(f) != '__MACOSX']
+    # strip away one directory level if the zip-archive contains a single directory
+    # at the top and the name of the directory is not in STOP_DIRS
+    if len(extractedFiles) == 1:
+        f = extractedFiles[0]
+        if shell.isDir(f) and shell.basename(f) not in STOP_DIRS:
+            return getExtractedFiles(f)
+    return [f for f in extractedFiles if shell.basename(f) not in IGNORE_DIRS]
+
 def unzip(config):
     submissionDirs = collectSubmissionDirs(config)
     for d in submissionDirs:
@@ -16,14 +29,7 @@ def unzip(config):
         zipFile = zipFiles[0]
         with tempfile.TemporaryDirectory(dir='/tmp') as tmpDir:
             zipfile.ZipFile(zipFile).extractall(tmpDir)
-            extractedFiles = shell.ls(tmpDir, '*')
-            extractedFiles = [f for f in extractedFiles if shell.basename(f) != '__MACOSX']
-            # strip away one directory level if the zip-archive contains a single directory
-            # at the top.
-            if len(extractedFiles) == 1:
-                f = extractedFiles[0]
-                if shell.isDir(f):
-                    extractedFiles = shell.ls(f, '*')
+            extractedFiles = getExtractedFiles(tmpDir)
             if shell.basename(zipFile) in [shell.basename(f) for f in extractedFiles]:
                 warn(f"Zip-file {zipFile} contains another zip-file with the same name. Cannot continue.")
                 continue
@@ -31,4 +37,4 @@ def unzip(config):
                 target = shell.pjoin(d, shell.basename(f))
                 if not shell.exists(target):
                     shell.mv(f, target)
-            print(f'Successfully extracted {zipFile}')
+            print(f'Successfully extracted {zipFile} to directory {d}')

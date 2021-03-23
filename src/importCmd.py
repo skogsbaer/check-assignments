@@ -9,7 +9,6 @@ import string
 @dataclass
 class ImportArgs:
     csvFile: str
-    maxPoints: list
 
 LETTERS = string.ascii_uppercase
 MARK = '\ufeff'
@@ -27,7 +26,8 @@ def projectLastName(nameColIdx):
 def importCmd(cfg, args):
     import openpyxl as exc
     assignments = []
-    for i, p in enumerate(args.maxPoints):
+    for i, a in enumerate(cfg.assignments):
+        p = str(a.points)
         assignments.append(f'A{i+1} ({p})')
     with open(args.csvFile) as csvfile:
         reader = csv.reader(csvfile, delimiter=',')

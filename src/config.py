@@ -9,13 +9,13 @@ import utils
 def getFromDicts(dicts, k, conv=lambda x: x, default=None):
     if type(dicts) is not list:
         dicts = [dicts]
+    val = None
     for d in dicts:
         if k in d:
             val = d[k]
             break
     else:
-        if default:
-            val = default
+        val = default
     if val is None:
         raise KeyError(f'Required key {k} not defined in {dicts[0]} and any of its parents')
     try:
@@ -27,40 +27,55 @@ class Keys:
     mainFile = 'main-file'
     testFiles = 'test-files'
     testFile = 'test-file'
+    gradleFile = 'gradle-file'
 
 @dataclass
 class Assignment:
     id: str
     points: int
     kind: str
-    keyValues: Dict
+    dicts: List[Dict]
     def parse(id, dicts):
         points = getFromDicts(dicts, 'points', int)
         kind = getFromDicts(dicts, 'kind')
-        return Assignment(id, points, kind, dicts[0])
-    def getMainFile(self, d):
-        k = 'main-file'
-        if k in self.keyValues:
-            return shell.pjoin(d, self.keyValues[k])
+        return Assignment(id, points, kind, dicts)
+    def getMainFile(self, d, fail=False):
+        return self.getFile(Keys.mainFile, d, fail)
+    def getGradleFile(self, d, fail=False):
+        return self.getFile(Keys.gradleFile, d, fail)
+    def getValue(self, k, fail=True):
+        val = getFromDicts(self.dicts, k)
+        if val is None and fail:
+            raise ValueError(f'Key {k} must be set for assignment {self.id}')
         else:
-            return None
-    def getAsList(self, k):
-        if k in self.keyValues:
-            x = self.keyValues[k]
-            if type(x) == list or type(x) == tuple:
-                return x
+            return val
+    def getFile(self, k, d, fail=True):
+        x = getFromDicts(self.dicts, k)
+        if x is not None:
+            return shell.pjoin(d, x)
+        else:
+            if fail:
+                raise ValueError(f'Key {k} must be set for assignment {self.id}')
             else:
-                return [x]
+                return None
+    def getAsList(self, k):
+        x = getFromDicts(self.dicts, k, default=[])
+        if type(x) == list or type(x) == tuple:
+            return x
+        elif x:
+            return [x]
         else:
             return []
     def getAsFileList(self, d, k):
         items = self.getAsList(k)
         return [shell.pjoin(d, x) for x in items]
+    def getTestFiles(self, d):
+        return self.getAsFileList(d, Keys.testFiles) + self.getAsFileList(d, Keys.testFile)
 
 @dataclass
 class Config:
     baseDir: str
-    assignments: List[str]
+    assignments: List[Assignment]
     testDir: str
     fileExt: str
 

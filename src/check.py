@@ -90,8 +90,6 @@ def parseArgs():
     runTests.add_argument('--interactive', help='Run the tests interactively', action='store_true', dest='interactive')
     runTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
     importCmd = subparsers.add_parser('import', help='Import a .csv file from moodle to produce an Excel spreadsheet for rating')
-    importCmd.add_argument('--points', dest='points', metavar='POINTS', type=str, required=True,
-                           help='A comma-separated list of points per assigment.')
     importCmd.add_argument('file', metavar='CSV_FILE', type=str,
                            help='A .csv file from moodle')
     export = subparsers.add_parser('export',
@@ -129,11 +127,7 @@ def main():
     elif args.cmd == 'export':
         exportCmd.export(config)
     elif args.cmd == 'import':
-        try:
-            maxPoints = [int(x.strip()) for x in args.points.split(',')]
-        except ValueError:
-            abort('Invalid value for option --points: ' + args.points)
-        importArgs = importCmd.ImportArgs(args.file, maxPoints)
+        importArgs = importCmd.ImportArgs(args.file)
         importCmd.importCmd(config, importArgs)
     elif not args.cmd:
         warn('No command given!')

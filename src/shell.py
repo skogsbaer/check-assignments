@@ -287,8 +287,8 @@ def abort(msg):
     sys.stderr.write('ERROR: ' + msg + '\n')
     sys.exit(1)
 
-def mkdir(d, mode=0o777, create_parents=False):
-    if create_parents:
+def mkdir(d, mode=0o777, createParents=False):
+    if createParents:
         os.makedirs(d, mode)
     else:
         os.mkdir(d, mode)
