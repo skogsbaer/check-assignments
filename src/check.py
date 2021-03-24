@@ -73,6 +73,10 @@ def parseArgs():
     parser.add_argument('--verbose', help='Be more verbose', action='store_true')
     parser.add_argument('--baseDir', metavar='DIR', type=str, required=False,
                         help='Directory with tests for the assignment. Default: current directory')
+    parser.add_argument('--wypp', metavar='DIR', type=str, required=False,
+                        help='Installation directory for write-your-python-program')
+    parser.add_argument('--gradle', metavar='FILE', type=str, required=False,
+                        help='Gradle executable')
     subparsers = parser.add_subparsers(help='Commands', dest='cmd')
     checkFilenames = subparsers.add_parser('checkFilenames', help='Check that all solutions are placed in the right files')
     fixFilenames = subparsers.add_parser('fixFilenames', help='Try to fix the names of the solution files')
@@ -106,7 +110,11 @@ def main():
         baseDir = args.baseDir
     else:
         baseDir = shell.pwd()
-    config = mkConfig(baseDir)
+    configDict = {
+        'gradle': args.gradle,
+        'wypp': args.wypp
+    }
+    config = mkConfig(baseDir, configDict)
     if args.cmd == 'checkFilenames':
         checkFilenames(config)
     elif args.cmd == 'checkPlagiarism':

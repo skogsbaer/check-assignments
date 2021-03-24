@@ -7,7 +7,7 @@ topDir = os.path.join(thisDir, '..')
 sys.path.insert(0, os.path.join(topDir, 'src'))
 import shell
 
-checkAssignments = shell.abspath(shell.pjoin(topDir, 'src', 'check.py'))
+checkAssignments = shell.abspath(shell.pjoin(topDir, 'check-assignments'))
 
 def abort(msg):
     sys.stderr.write(msg + '\n')
@@ -23,26 +23,30 @@ with shell.tempDir(onException=False) as tmp:
     with shell.workingDir(shell.pjoin(tmp, 'test-data/submissions')):
 
         print('### import ###')
-        shell.run(['python3', checkAssignments, 'import', '../rating-moodle.csv'])
+        shell.run([checkAssignments, 'import', '../rating-moodle.csv'])
         assertExists('rating.xlsx')
 
         print('### unzip ###')
         barFoo = 'Bar Foo_1234_assignsubmission_file_/'
-        shell.run(['python3', checkAssignments, 'unzip'])
+        shell.run([checkAssignments, 'unzip'])
         assertExists(barFoo + 'assignment_01.py')
 
         print('### addComment ###')
-        shell.run(['python3', checkAssignments, 'addComment'])
+        shell.run([checkAssignments, 'addComment'])
         assertExists(barFoo + 'COMMENTS.txt')
 
         print('### tests ###')
-        shell.run(['python3', checkAssignments, 'runTests'])
+        shell.run([checkAssignments, 'runTests'])
+
+        print()
+        print('NOTE: the python test should fail with "AssertionError: 41 != 42"')
+        print('NOTE: the java test should fail with "org.opentest4j.AssertionFailedError: expected: <1> but was: <0>"')
 
         # plagiarism
         # todo
 
         print('### export ###')
-        shell.run(['python3', checkAssignments, 'export'])
+        shell.run([checkAssignments, 'export'])
         assertExists(barFoo + 'POINTS.txt')
         assertExists('rating.csv')
         assertExists('feedback.zip')
@@ -55,7 +59,7 @@ with shell.tempDir(onException=False) as tmp:
     with shell.workingDir(shell.pjoin(tmp, 'test-data/submissions')):
 
         print('### prepare ###')
-        shell.run(['python3', checkAssignments, 'prepare', '../rating-moodle.csv'])
+        shell.run([checkAssignments, 'prepare', '../rating-moodle.csv'])
         assertExists('rating.xlsx')
         barFoo = 'Bar Foo_1234_assignsubmission_file_/'
         assertExists(barFoo + 'assignment_01.py')

@@ -1,5 +1,6 @@
 import sys
 import traceback
+from ansi import *
 
 def warn(msg):
     print('WARN: ' + msg)
@@ -15,6 +16,6 @@ def verbose(msg):
         print('[V] ' + msg)
 
 def abort(msg):
-    print('ERROR: ' + msg)
+    print(red('ERROR: ' + msg))
     traceback.print_stack(file=sys.stdout)
     sys.exit(1)

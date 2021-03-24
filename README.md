@@ -71,7 +71,7 @@ for an example.
 
 ## Top-level keys
 
-* `test-dir`
+* `test-dir`: directory for test files, default to `tests` inside the root directory.
 * `assignments`: Under the `assignments` key each assignment is listed with its number. The keys for individual assignments are listed in the subsection
 "assignment specific keys".
 

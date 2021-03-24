@@ -75,27 +75,35 @@ class Assignment:
 class Config:
     baseDir: str
     assignments: List[Assignment]
+    configDict: Dict
     testDir: str
-    fileExt: str
 
-    def __init__(self, baseDir, assignments, testDir, fileExt):
+    def __init__(self, baseDir, configDict, assignments, testDir):
         self.assignments = assignments
+        self.configDict = configDict
         self.testDir = testDir
         self.baseDir = baseDir
         self.submissionDirGlob = '*_assignsubmission_file_'
         self.submissionDirTextGlob = '*_assignsubmission_onlinetext_'
-        self.fileExt = fileExt
-        self.submissionFileGlob = '*' + (fileExt if fileExt else "")
         self.feedbackZip = 'feedback.zip'
         self.lang = 'de'
 
-    def parse(baseDir, dict):
+    @staticmethod
+    def parse(baseDir, configDict, ymlDict):
         assignments= []
-        for k, v in dict['assignments'].items():
-            a = Assignment.parse(k, [v, dict])
+        for k, v in ymlDict['assignments'].items():
+            a = Assignment.parse(k, [v, ymlDict])
             assignments.append(a)
-        testDir = dict.get('testDir', shell.pjoin(baseDir, 'tests'))
-        return Config(baseDir, assignments, testDir, "FIXME")
+        testDir = ymlDict.get('testDir', shell.pjoin(baseDir, 'tests'))
+        return Config(baseDir, configDict, assignments, testDir)
+
+    @property
+    def gradlePath(self):
+        return self.configDict.get('gradle', 'gradle')
+
+    @property
+    def wyppDir(self):
+        return self.configDict.get('wypp', None)
 
     @property
     def spreadsheetPath(self):
@@ -131,12 +139,12 @@ class Config:
     def commentsFile(self):
         return 'COMMENTS.txt'
 
-def mkConfig(baseDir):
+def mkConfig(baseDir, configDict):
     if not shell.isdir(baseDir):
         abort('Base directory {baseDir} does not exist')
     yamlPath = shell.pjoin(baseDir, 'check.yml')
     if not shell.isFile(yamlPath):
         abort(f'Config file {yamlPath} not found')
     s = utils.readFile(yamlPath)
-    dict = yaml.load(s, Loader=yaml.FullLoader)
-    return Config.parse(baseDir, dict)
+    ymlDict = yaml.load(s, Loader=yaml.FullLoader)
+    return Config.parse(baseDir, configDict, ymlDict)

@@ -31,12 +31,6 @@ def collectSubmissionFiles(config, d):
     expected = set(config.assignments)
     return sorted([f for f in files if shell.basename(f) in expected])
 
-def collectTestFiles(config):
-    if config.testDir is None:
-        return None
-    files = shell.ls(config.testDir, config.submissionFileGlob)
-    return files
-
 def findSubmissionDirForId(config, x):
     """
     Returns the submission directory for a student with ID x.
