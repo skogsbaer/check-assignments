@@ -110,6 +110,11 @@ def main():
         baseDir = args.baseDir
     else:
         baseDir = shell.pwd()
+    if args.cmd is None:
+        print('Welcome to check-assignments.')
+        print('You did not specify any command.')
+        print('Please use the --help flag to see which commands are available.')
+        return
     configDict = {
         'gradle': args.gradle,
         'wypp': args.wypp
@@ -143,8 +148,6 @@ def main():
         testCmd.runTests(config, a)
     elif args.cmd == 'export':
         exportCmd.export(config)
-    elif not args.cmd:
-        warn('No command given!')
     else:
         warn('Unknown command: ' + args.cmd)
 

@@ -27,7 +27,7 @@ def readCommand(cfg, args, studentDir, assignment):
     commands = [('h?', HELP_COMMAND, 'Print this help message'),
                 ('i', INSPECT_COMMAND, f'Inspect file {f}')]
     commands.append( ('r', RERUN_COMMAND, f'Re-run tests') )
-    commands.append( ('c', CONTINUE_COMMAND, f'Continue with next student') )
+    commands.append( ('c', CONTINUE_COMMAND, f'Continue with next assignment/student') )
     def printHelp():
         for char, cmd, help in commands:
             print(f'  {char}: {help}')
