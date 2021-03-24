@@ -27,7 +27,6 @@ class Keys:
     mainFile = 'main-file'
     testFiles = 'test-files'
     testFile = 'test-file'
-    gradleFile = 'gradle-file'
 
 @dataclass
 class Assignment:

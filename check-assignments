@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Directory of the check-assignments repo
+CHECK_ASSIGNMENTS_DIR=$HOME/devel/check-assignments/
+
+# Directory of the write-your-python-program repo
+# (only needed when checking python code, just leave as is if not needed)
+WYPP_DIR=$HOME/devel/check-assignments/src/check.py
+
+# Gradle executable (only needed when checking java code, just leave as is if not needed)
+GRADLE=gradle
+
+# Python 3 executable
+PYTHON=python3
+
+exec "$PYTHON" "$CHECK_ASSIGNMENTS_DIR/src/check.py" --wypp "$WYPP_DIR" --gradle "$GRADLE" "$@"
