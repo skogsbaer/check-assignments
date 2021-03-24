@@ -1,4 +1,6 @@
 import shell
+import os
+import zipfile
 
 def readBinaryFile(name):
     with open(name, 'rb') as f:
@@ -73,3 +75,13 @@ def copyFileIfNotExists(srcDir, path, targetDir):
             raise IOError(f'Target file {tgtPath} already exists with content different than in {srcPath}')
     else:
         shell.cp(srcPath, tgtPath)
+
+def zipDirs(zipPath, dirs):
+    zf = zipfile.ZipFile(zipPath, 'w', zipfile.ZIP_DEFLATED)
+    for d in dirs:
+        for root, dirs, files in os.walk(d):
+            for f in files:
+                zf.write(os.path.join(root, f), 
+                         os.path.relpath(os.path.join(root, f), 
+                                         os.path.join(d, '..')))
+    zf.close()

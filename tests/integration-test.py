@@ -2,12 +2,15 @@
 
 import sys
 import os
+import zipfile
 thisDir = os.path.dirname(__file__)
 topDir = os.path.join(thisDir, '..')
 sys.path.insert(0, os.path.join(topDir, 'src'))
 import shell
 
 checkAssignments = shell.abspath(shell.pjoin(topDir, 'check-assignments'))
+if sys.platform == 'win32':
+    checkAssignments = checkAssignments + ".bat"
 
 def abort(msg):
     sys.stderr.write(msg + '\n')
@@ -50,7 +53,11 @@ with shell.tempDir(onException=False) as tmp:
         assertExists(barFoo + 'POINTS.txt')
         assertExists('rating.csv')
         assertExists('feedback.zip')
-
+        zip = zipfile.ZipFile('feedback.zip')
+        fileName = 'Bar Foo_1234_assignsubmission_file_/COMMENTS.txt'
+        if fileName not in zip.namelist():
+            abort(f'{fileName} not in zip')
+        zip.close()
 print()
 
 with shell.tempDir(onException=False) as tmp:

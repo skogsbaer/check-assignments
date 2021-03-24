@@ -47,12 +47,8 @@ NAME_COL = 'Vollständiger Name'
 
 def loadShpreadsheet(name):
     import openpyxl as exc
-    x = readBinaryFile(name)
-    # I use a temporary file, I somehow got the feeling that openpyxl messes around with the .xlsx file
-    with tempfile.NamedTemporaryFile(suffix='.xlsx') as fp:
-        fp.write(x)
-        wb = exc.load_workbook(filename=fp.name, data_only=True)
-        return wb
+    wb = exc.load_workbook(filename=name, data_only=True)
+    return wb    
 
 def export(cfg):
     f = cfg.spreadsheetPath
@@ -134,6 +130,7 @@ def export(cfg):
     # write .zip file feedback
     with shell.workingDir(cfg.baseDir):
         allDirs = collectSubmissionDirs(cfg, baseDir='.', includeBoth=True)
-        shell.run(['rm', '-f', cfg.feedbackZip])
-        shell.run(['zip', '-q', '-r', cfg.feedbackZip] + allDirs + ['-x', '*/TUTOR/*'])
+        shell.removeFile(cfg.feedbackZip)
+        # shell.run(['zip', '-q', '-r', cfg.feedbackZip] + allDirs + ['-x', '*/TUTOR/*'])
+        zipDirs(cfg.feedbackZip, allDirs)
     verbose(f'Wrote {shell.pjoin(cfg.baseDir, cfg.feedbackZip)}')

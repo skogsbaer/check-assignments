@@ -27,7 +27,8 @@ def unzip(config):
             warn(f"More than one zip-file found in ${d}, don't know what to do")
             continue
         zipFile = zipFiles[0]
-        with tempfile.TemporaryDirectory(dir='/tmp') as tmpDir:
+        sysTempDir = tempfile.gettempdir()
+        with tempfile.TemporaryDirectory(dir=sysTempDir) as tmpDir:
             zipfile.ZipFile(zipFile).extractall(tmpDir)
             extractedFiles = getExtractedFiles(tmpDir)
             if shell.basename(zipFile) in [shell.basename(f) for f in extractedFiles]:

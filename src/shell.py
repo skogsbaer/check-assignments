@@ -20,7 +20,10 @@ import shutil
 _pyshell_debug = os.environ.get('PYSHELL_DEBUG', 'no').lower()
 PYSHELL_DEBUG = _pyshell_debug in ['yes', 'true', 'on']
 
-DEV_NULL = open('/dev/null')
+try:
+    DEV_NULL = open('/dev/null')
+except:
+    DEV_NULL = open('nul')
 
 def debug(s):
     if PYSHELL_DEBUG:
@@ -266,6 +269,10 @@ expandEnvVars = os.path.expandvars
 
 pjoin = os.path.join
 mv = os.rename
+
+def removeFile(path):
+    if isFile(path):
+        os.remove(path)
 
 def cp(src, target):
     if isFile(src):

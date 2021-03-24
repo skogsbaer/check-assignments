@@ -29,7 +29,7 @@ def importCmd(cfg, args):
     for i, a in enumerate(cfg.assignments):
         p = str(a.points)
         assignments.append(f'A{i+1} ({p})')
-    with open(args.csvFile) as csvfile:
+    with open(args.csvFile, encoding='utf-8') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
         csvRows = list(reader)
     if len(csvRows) == 0:
