@@ -17,7 +17,7 @@ def runJavaTests(cfg: Config, args: TestArgs, studentDir: str, assignment: Assig
     with shell.workingDir(cfg.baseDir):
         if not shell.isFile('build.gradle'):
             abort(f'No build.gradle file in {cfg.baseDir}, aborting')
-        cmd = [cfg.gradlePath] + gradlePropArgs + ['test']
+        cmd = [cfg.gradlePath] + gradlePropArgs + ['test', '--rerun-tasks']
         print(f'Executing {" ".join(cmd)}')
         result = shell.run(cmd, onError='ignore')
     if result.exitcode == 0:

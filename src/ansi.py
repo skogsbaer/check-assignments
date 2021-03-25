@@ -27,3 +27,6 @@ def green(s):
 
 def red(s):
     return color(s, RED + BOLD)
+
+def blue(s):
+    return color(s, BLUE + BOLD)

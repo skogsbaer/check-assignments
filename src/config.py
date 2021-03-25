@@ -6,7 +6,7 @@ from typing import *
 import yaml
 import utils
 
-def getFromDicts(dicts, k, conv=lambda x: x, default=None):
+def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True):
     if type(dicts) is not list:
         dicts = [dicts]
     val = None
@@ -17,7 +17,10 @@ def getFromDicts(dicts, k, conv=lambda x: x, default=None):
     else:
         val = default
     if val is None:
-        raise KeyError(f'Required key {k} not defined in {dicts[0]} and any of its parents')
+        if fail:
+            raise KeyError(f'Required key {k} not defined in {dicts[0]} and any of its parents')
+        else:
+            return None
     try:
         return conv(val)
     except:
@@ -43,13 +46,13 @@ class Assignment:
     def getGradleFile(self, d, fail=False):
         return self.getFile(Keys.gradleFile, d, fail)
     def getValue(self, k, fail=True):
-        val = getFromDicts(self.dicts, k)
+        val = getFromDicts(self.dicts, k, fail=False)
         if val is None and fail:
             raise ValueError(f'Key {k} must be set for assignment {self.id}')
         else:
             return val
     def getFile(self, k, d, fail=True):
-        x = getFromDicts(self.dicts, k)
+        x = getFromDicts(self.dicts, k, fail=fail)
         if x is not None:
             return shell.pjoin(d, x)
         else:
@@ -83,7 +86,8 @@ class Config:
         self.configDict = configDict
         self.testDir = testDir
         self.baseDir = baseDir
-        self.submissionDirGlob = '*_assignsubmission_file_'
+        self.submissionDirSuffix = '_assignsubmission_file_'
+        self.submissionDirGlob = '*' + self.submissionDirSuffix
         self.submissionDirTextGlob = '*_assignsubmission_onlinetext_'
         self.feedbackZip = 'feedback.zip'
         self.lang = 'de'
@@ -94,7 +98,7 @@ class Config:
         for k, v in ymlDict['assignments'].items():
             a = Assignment.parse(k, [v, ymlDict])
             assignments.append(a)
-        testDir = ymlDict.get('testDir', shell.pjoin(baseDir, 'tests'))
+        testDir = ymlDict.get('test-dir', shell.pjoin(baseDir, 'tests'))
         return Config(baseDir, configDict, assignments, testDir)
 
     @property

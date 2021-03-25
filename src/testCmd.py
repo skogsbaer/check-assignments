@@ -24,8 +24,9 @@ HELP_COMMAND = 'help'
 
 def readCommand(cfg, args, studentDir, assignment):
     f = assignment.getMainFile(studentDir)
-    commands = [('h?', HELP_COMMAND, 'Print this help message'),
-                ('i', INSPECT_COMMAND, f'Inspect file {f}')]
+    commands = [('h', HELP_COMMAND, 'Print this help message')]
+    if f:
+        commands.append( ('i', INSPECT_COMMAND, f'Inspect file {f}') )
     commands.append( ('r', RERUN_COMMAND, f'Re-run tests') )
     commands.append( ('c', CONTINUE_COMMAND, f'Continue with next assignment/student') )
     def printHelp():
@@ -56,7 +57,21 @@ TEST_DICT = {
     'haskell': testHaskell.runHaskellTests
 }
 
+def prettyStudent(cfg, studentDir):
+    x = shell.basename(studentDir)
+    suf = cfg.submissionDirSuffix
+    if x.endswith(suf):
+        x = x[:-len(suf)]
+    i = x.rindex('_')
+    if i > 0 and i < len(x) - 1:
+        name = x[:i]
+        matrikel = x[i+1:]
+        return f'{name} ({matrikel})'
+    else:
+        return x
+
 def runTestsForAssignment(cfg, args, studentDir, assignment):
+    print(blue(f'Checking assignment {assignment.id} for student {prettyStudent(cfg, studentDir)}'))
     k = assignment.kind
     if k in TEST_DICT:
         fun = TEST_DICT[k]
@@ -69,7 +84,7 @@ def interactiveLoop(cfg, args, studentDir, a):
     if args.interactive:
         while True:
             print()
-            print(studentDir)
+            print(blue(f'Just checked assignment {a.id} for student {prettyStudent(cfg, studentDir)}'))
             cmd = readCommand(cfg, args, studentDir, a)
             if cmd == INSPECT_COMMAND:
                 inspectFile(cfg, args, studentDir, a)

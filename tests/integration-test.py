@@ -39,7 +39,7 @@ with shell.tempDir(onException=False) as tmp:
         assertExists(barFoo + 'COMMENTS.txt')
 
         print('### tests ###')
-        shell.run([checkAssignments, 'runTests'])
+        shell.run([checkAssignments, 'runTests', '--interactive'], input='c\nc\n')
 
         print()
         print('NOTE: the python test should fail with "AssertionError: 41 != 42"')
