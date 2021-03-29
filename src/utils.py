@@ -81,7 +81,17 @@ def zipDirs(zipPath, dirs):
     for d in dirs:
         for root, dirs, files in os.walk(d):
             for f in files:
-                zf.write(os.path.join(root, f), 
-                         os.path.relpath(os.path.join(root, f), 
+                zf.write(os.path.join(root, f),
+                         os.path.relpath(os.path.join(root, f),
                                          os.path.join(d, '..')))
     zf.close()
+
+def stripLeadingSlash(x):
+    if x.startswith('/'):
+        return stripLeadingSlash(x[1:])
+    return x
+
+def stripTrailingSlash(x):
+    if x.endswith('/'):
+        return stripTrailingSlash(x[:-1])
+    return x

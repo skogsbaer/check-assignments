@@ -59,10 +59,17 @@ TEST_DICT = {
 
 def prettyStudent(cfg, studentDir):
     x = shell.basename(studentDir)
+    if not x:
+        x = studentDir
+    x = stripLeadingSlash(x)
+    x = stripTrailingSlash(x)
     suf = cfg.submissionDirSuffix
     if x.endswith(suf):
         x = x[:-len(suf)]
-    i = x.rindex('_')
+    try:
+        i = x.rindex('_')
+    except ValueError:
+        return x
     if i > 0 and i < len(x) - 1:
         name = x[:i]
         matrikel = x[i+1:]

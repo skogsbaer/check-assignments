@@ -48,7 +48,7 @@ NAME_COL = 'Vollständiger Name'
 def loadShpreadsheet(name):
     import openpyxl as exc
     wb = exc.load_workbook(filename=name, data_only=True)
-    return wb    
+    return wb
 
 def export(cfg):
     f = cfg.spreadsheetPath
@@ -126,11 +126,11 @@ def export(cfg):
                 # pointColIdxs is sorted in reverse
                 l.pop(i)
             w.writerow(l)
-    verbose(f'Wrote {ratingCsv}')
+    print(f'Wrote {ratingCsv}')
     # write .zip file feedback
     with shell.workingDir(cfg.baseDir):
         allDirs = collectSubmissionDirs(cfg, baseDir='.', includeBoth=True)
         shell.removeFile(cfg.feedbackZip)
         # shell.run(['zip', '-q', '-r', cfg.feedbackZip] + allDirs + ['-x', '*/TUTOR/*'])
         zipDirs(cfg.feedbackZip, allDirs)
-    verbose(f'Wrote {shell.pjoin(cfg.baseDir, cfg.feedbackZip)}')
+    print(f'Wrote {shell.pjoin(cfg.baseDir, cfg.feedbackZip)}')
