@@ -80,6 +80,9 @@ def prettyStudent(cfg, studentDir):
 def runTestsForAssignment(cfg, args, studentDir, assignment):
     print(blue(f'Checking assignment {assignment.id} for student {prettyStudent(cfg, studentDir)}'))
     k = assignment.kind
+    if not assignment.hasTests:
+        print('No tests configured')
+        return
     if k in TEST_DICT:
         fun = TEST_DICT[k]
         fun(cfg, args, studentDir, assignment)

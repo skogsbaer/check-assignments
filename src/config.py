@@ -73,6 +73,10 @@ class Assignment:
         return [shell.pjoin(d, x) for x in items]
     def getTestFiles(self, d):
         return self.getAsFileList(d, Keys.testFiles) + self.getAsFileList(d, Keys.testFile)
+    @property
+    def hasTests(self):
+        disabled = getFromDicts(self.dicts, 'disable-tests', default=False)
+        return not disabled
 
 @dataclass
 class Config:
