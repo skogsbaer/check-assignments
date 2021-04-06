@@ -8,3 +8,7 @@ assignments:
     points: 4
     kind: java
     test-filter: "assignment_02.*"
+  3:
+    points: 4
+    kind: java
+    disable-tests: true

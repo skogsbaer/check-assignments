@@ -81,6 +81,8 @@ For each assignment, you have the following options available.
 
 * `points`: the number of points for the assignment.
 * `kind`: the programming language in which the solution is expected.
+* `disable-tests`: disable the tests, only compile if appropriate for the
+  language.
 
 ### Keys for `kind: "java"`
 

@@ -39,11 +39,12 @@ with shell.tempDir(onException=False) as tmp:
         assertExists(barFoo + 'COMMENTS.txt')
 
         print('### tests ###')
-        shell.run([checkAssignments, 'runTests', '--interactive'], input='c\nc\n')
+        shell.run([checkAssignments, 'runTests', '--interactive'], input='c\nc\nc\n')
 
         print()
         print('NOTE: the python test should fail with "AssertionError: 41 != 42"')
-        print('NOTE: the java test should fail with "org.opentest4j.AssertionFailedError: expected: <1> but was: <0>"')
+        print('NOTE: the first java test should fail with "org.opentest4j.AssertionFailedError: expected: <1> but was: <0>"')
+        print('NOTE: the second java test should work (no tests are run, only compiles')
 
         # plagiarism
         # todo
