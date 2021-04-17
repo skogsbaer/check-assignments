@@ -97,7 +97,7 @@ def export(cfg):
         if not studentId:
             continue
         studentId = fixStudentId(studentId)
-        if status.lower() == 'keine abgabe':
+        if status and status.lower() == 'keine abgabe':
             continue
         lines = []
         for c in pointCols:

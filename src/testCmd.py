@@ -34,7 +34,10 @@ def readCommand(cfg, args, studentDir, assignment):
             print(f'  {char}: {help}')
     shortcutHelp = [x[0] for x in commands]
     while True:
-        c = input(f'What to do next? {"/".join(shortcutHelp)} ')
+        try:
+            c = input(f'What to do next? {"/".join(shortcutHelp)} ')
+        except EOFError:
+            raise KeyboardInterrupt()
         for chars, cmd, help in commands:
             if c in chars:
                 if cmd == HELP_COMMAND:
