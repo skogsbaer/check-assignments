@@ -2,6 +2,7 @@ from __future__ import annotations
 from config import *
 from ansi import *
 from ownLogging import *
+import utils
 import sys
 
 def runPythonTests(cfg: Config, args: TestArgs, studentDir: str, assignment: Assignment):
@@ -24,9 +25,10 @@ def runPythonTests(cfg: Config, args: TestArgs, studentDir: str, assignment: Ass
         shell.pjoin(wyppDir, 'python/src/runYourProgram.py')
     ]
     if testFile:
-        result = shell.run(progArgs + ['--test-file', testFile, '--check', file], onError='ignore')
+        args = ['--test-file', testFile, '--check', file]
     else:
-        result = shell.run(progArgs + ['--check', file], onError='ignore')
+        args = ['--check', file]
+    result = shell.run(progArgs + args, onError='ignore')
     if result.exitcode == 0:
         print(green(f'Tests for {assignment.id} OK'))
     else:

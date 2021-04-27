@@ -12,16 +12,27 @@ class ImportArgs:
 
 LETTERS = string.ascii_uppercase
 MARK = '\ufeff'
+FEEDBACK_COL = 'Feedback als Kommentar'
 
-def projectLastName(nameColIdx):
+def sortKey(nameColIdx, names):
     def f(cols):
-        name = cols[nameColIdx]
-        splitted = [x.strip() for x in name.split(' ', 1)]
-        if len(splitted) < 2:
-            return name
-        else:
-            return splitted[1] + ' ' + splitted[0]
+        name = cols[nameColIdx].strip()
+        try:
+            return names.index(name)
+        except ValueError:
+            return len(names)
     return f
+
+def getNames(cfg):
+    dirs = collectSubmissionDirs(cfg)
+    names = []
+    for d in dirs:
+        try:
+            (name, _) = parseSubmissionDir(cfg, d)
+            names.append(name)
+        except ValueError:
+            pass
+    return names
 
 def importCmd(cfg, args):
     import openpyxl as exc
@@ -37,6 +48,7 @@ def importCmd(cfg, args):
     nameColIdx = -1
     ratingColIdx = -1
     statusColIdx = -1
+    feedbackColIdx = -1
     for i, col in enumerate(csvRows[0]):
         if col == RATING_COL:
             ratingColIdx = i
@@ -44,12 +56,19 @@ def importCmd(cfg, args):
             nameColIdx = i
         if col == STATUS_COL:
             statusColIdx = i
+        if col == FEEDBACK_COL:
+            feedbackColIdx = i
     if ratingColIdx < 0:
         abort(f'No column {RATING_COL} found in {args.csvFile}. Rows: {csvRows[0]}')
     if nameColIdx < 0:
         abort(f'No column {NAME_COL} found in {args.csvFile}. Rows: {csvRows[0]}')
+    if feedbackColIdx < 0:
+        abort(f'No column {FEEDBACK_COL} found in {args.csvFile}. Rows: {csvRows[0]}')
     contentCsvRows = csvRows[1:]
-    contentCsvRows.sort(key=projectLastName(nameColIdx))
+    names = getNames(cfg)
+    if not names:
+        abort('No submission directories found. Please provide them before running import or prepare')
+    contentCsvRows.sort(key=sortKey(nameColIdx, names))
     sortedCsvRows = [csvRows[0]] + contentCsvRows
     filteredCsvRows = []
     for i, row in enumerate(sortedCsvRows):
@@ -59,6 +78,8 @@ def importCmd(cfg, args):
             filteredCsvRows.append(row)
     newRows = []
     for i, row in enumerate(filteredCsvRows):
+        if i > 0:
+            row[feedbackColIdx] = 'Siehe COMMENTS.txt und POINTS.txt'
         prefixCols = row[:ratingColIdx]
         if i == 0 and prefixCols[0].startswith(MARK):
             prefixCols[0] = prefixCols[0][len(MARK):]

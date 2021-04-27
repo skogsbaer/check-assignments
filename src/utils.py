@@ -46,6 +46,26 @@ def findSubmissionDirForId(config, x):
             return d
     return dirs[0]
 
+def parseSubmissionDir(cfg, d):
+    x = shell.basename(d)
+    if not x:
+        x = d
+    x = stripLeadingSlash(x)
+    x = stripTrailingSlash(x)
+    suf = cfg.submissionDirSuffix
+    if x.endswith(suf):
+        x = x[:-len(suf)]
+    try:
+        i = x.rindex('_')
+    except ValueError:
+        raise ValueError(f'Invalid submission directory: {x}')
+    if i > 0 and i < len(x) - 1:
+        name = x[:i]
+        matrikel = x[i+1:]
+        return (name, matrikel)
+    else:
+        raise ValueError(f'Invalid submission directory: {x}')
+
 def stripSlashes(x):
     if not x:
         return x
@@ -95,3 +115,13 @@ def stripTrailingSlash(x):
     if x.endswith('/'):
         return stripTrailingSlash(x[:-1])
     return x
+
+class Tee:
+    def __init__(self, files):
+        self.files = files
+    def write(self, data):
+        for f in self.files:
+            f.write(data)
+    def flush(self):
+        for f in self.files:
+            f.flush()

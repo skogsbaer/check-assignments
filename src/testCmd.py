@@ -61,23 +61,15 @@ TEST_DICT = {
 }
 
 def prettyStudent(cfg, studentDir):
-    x = shell.basename(studentDir)
-    if not x:
-        x = studentDir
-    x = stripLeadingSlash(x)
-    x = stripTrailingSlash(x)
-    suf = cfg.submissionDirSuffix
-    if x.endswith(suf):
-        x = x[:-len(suf)]
     try:
-        i = x.rindex('_')
-    except ValueError:
-        return x
-    if i > 0 and i < len(x) - 1:
-        name = x[:i]
-        matrikel = x[i+1:]
+        (name, matrikel) = parseSubmissionDir(cfg, studentDir)
         return f'{name} ({matrikel})'
-    else:
+    except ValueError:
+        x = shell.basename(studentDir)
+        if not x:
+            x = studentDir
+        x = stripLeadingSlash(x)
+        x = stripTrailingSlash(x)
         return x
 
 def runTestsForAssignment(cfg, args, studentDir, assignment):
