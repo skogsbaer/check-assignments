@@ -61,8 +61,12 @@ def addComment(cfg):
 
 Die Bewertung finden Sie in der Datei POINTS.txt.
 
-Möglicherweise enthalten die Quelldateien aufgaben-spezifische Kommentare. Diese sind mit TUTOR/TUTORIN oder
-DOZENT/DOZENTIN gekennzeichnet.
+Falls für Ihre Abgabe automatisch Tests ausgeführt wurden, finden Sie die
+Ausgabe der Tests für die i-te Aufgabe in der Datei OUTPUT_i.txt.
+
+Möglicherweise enthalten die Quelldateien aufgaben-spezifische Kommentare.
+Diese sind mit TUTOR/TUTORIN oder DOZENT/DOZENTIN gekennzeichnet, so dass
+Sie bequem danach suchen können.
 
 =============================================================================================================
 
