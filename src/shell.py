@@ -349,8 +349,8 @@ class tempDir:
 
 def ls(d, *globs):
     """
-    >>> ls('../src/', '*.py', '*')
-    ['../src/shell.py']
+    >>> '../src/shell.py' in ls('../src/', '*.py', '*')
+    True
     """
     res = []
     if not d:
@@ -361,6 +361,74 @@ def ls(d, *globs):
                 res.append(os.path.join(d, f))
                 break
     return res
+
+def readBinaryFile(name):
+    with open(name, 'rb') as f:
+        return f.read()
+
+def readFile(name):
+    with open(name, 'r', encoding='utf-8') as f:
+        return f.read()
+
+def writeFile(name, content):
+    with open(name, 'w', encoding='utf-8') as f:
+        f.write(content)
+
+def writeBinaryFile(name, content):
+    with open(name, 'wb') as f:
+        f.write(content)
+
+def _teeChild(pRead, pWrite, files, encoding, bufferSize):
+    debug('child of tee started')
+    try:
+        # Close parent's end of the pipe
+        os.close(pWrite)
+        bytes = os.read(pRead, bufferSize)
+        while(bytes):
+            if encoding != 'raw':
+                data = bytes.decode(encoding)
+            else:
+                data = bytes
+            for f in files:
+                f.write(data)
+                f.flush()
+                debug(f'Wrote {data} to {f}')
+            bytes = os.read(pRead, bufferSize)
+    except Exception as e:
+        sys.stderr.write(f'ERROR: tee failed with an exception: {e}\n')
+    finally:
+        for f in files:
+            f.close()
+            debug(f'Closed {f}')
+        debug('child of tee finished')
+
+def createTee(files, encoding='utf-8', bufferSize=128):
+        """Get a file object that will mirror writes across multiple files objs
+        Parameters:
+            files        A list of file-like objects
+            encoding     The encoding of the data written to files. Use 'raw' to pass
+                         the bytes directly.
+            bufferSize   Control the size of the buffer between writes to the
+                         resulting file object and the list of files.
+        """
+        pRead, pWrite = os.pipe()
+        pid = os.fork()
+        if pid == 0:
+            # Child -- Read bytes from the pipe and write them to the specified
+            #          files.
+            try:
+                _teeChild(pRead, pWrite, files, encoding, bufferSize)
+            except:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+                print(''.join('BUG in shell.py ' + line for line in lines))
+            finally:
+                os._exit(255)
+
+        else:
+            # Parent -- Return a file object wrapper around the pipe to the
+            #           child.
+            return os.fdopen(pWrite,'w')
 
 if __name__ == "__main__":
     import doctest

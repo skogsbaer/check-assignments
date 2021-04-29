@@ -20,6 +20,12 @@ def assertExists(path):
     if not shell.isFile(path):
         abort(f'File {path} does not exist')
 
+def assertFileNotEmpty(path):
+    assertExists(path)
+    s = shell.readFile(path)
+    if not s:
+        abort(f'File {path} is empty')
+
 with shell.tempDir(onException=False) as tmp:
     print(f'tmp={tmp}')
     shell.cp(shell.pjoin(topDir, 'test-data'), tmp)
@@ -40,6 +46,9 @@ with shell.tempDir(onException=False) as tmp:
 
         print('### tests ###')
         shell.run([checkAssignments, 'runTests', '--interactive'], input='c\nc\nc\n')
+        assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_1.txt'))
+        assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_2.txt'))
+        assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_3.txt'))
 
         print()
         print('NOTE: the python test should fail with "AssertionError: 41 != 42"')

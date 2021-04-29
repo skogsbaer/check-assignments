@@ -23,7 +23,10 @@ def runJavaTests(cfg: Config, args: TestArgs, studentDir: str, assignment: Assig
             gradleCmd = 'test'
         cmd = [cfg.gradlePath] + gradlePropArgs + [gradleCmd, '--rerun-tasks']
         print(f'Executing {" ".join(cmd)}')
-        result = shell.run(cmd, onError='ignore')
+        logFileName = shell.pjoin(studentDir, f'OUTPUT_{assignment.id}.txt')
+        with open(logFileName, 'w') as logFile:
+            tee = shell.createTee([sys.stdout, logFile])
+            result = shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=tee)
     if result.exitcode == 0:
         print(green(f'Tests for {assignment.id} OK'))
     else:
