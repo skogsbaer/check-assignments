@@ -9,10 +9,8 @@ class ShellTest(unittest.TestCase):
         with shell.tempDir() as d:
             p1 = shell.pjoin(d, "f1.txt")
             p2 = shell.pjoin(d, "f2.txt")
-            with open(p1, 'w') as f1:
-                with open(p2, 'w') as f2:
-                    with shell.createTee([f1, f2, sys.stderr]) as t:
-                        t.write('Hello World!')
+            with shell.createTee([p1, p2, shell.TEE_STDERR]) as t:
+                t.write('Hello World!')
             time.sleep(0.1)
             s1 = shell.readFile(p1)
             s2 = shell.readFile(p2)

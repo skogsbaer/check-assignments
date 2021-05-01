@@ -16,6 +16,8 @@ import shutil
 import types
 import fnmatch
 import shutil
+from threading import Thread
+import traceback
 
 _pyshell_debug = os.environ.get('PYSHELL_DEBUG', 'no').lower()
 PYSHELL_DEBUG = _pyshell_debug in ['yes', 'true', 'on']
@@ -378,57 +380,82 @@ def writeBinaryFile(name, content):
     with open(name, 'wb') as f:
         f.write(content)
 
-def _teeChild(pRead, pWrite, files, encoding, bufferSize):
+def _openForTee(x):
+    if type(x) == str:
+        return open(x, 'wb')
+    elif type(x) == tuple:
+        (name, mode) = x
+        if mode == 'w':
+            return open(name, 'wb')
+        elif mode == 'a':
+            return open(name, 'wa')
+        raise ValueError(f'Bad mode: {mode}')
+    elif x == TEE_STDERR:
+        return sys.stderr
+    elif x == TEE_STDOUT:
+        return sys.stdout
+    else:
+        raise ValueError(f'Invalid file argument: {x}')
+
+def _teeChildWorker(pRead, pWrite, fileNames, bufferSize):
     debug('child of tee started')
+    files = []
     try:
-        # Close parent's end of the pipe
-        os.close(pWrite)
+        for x in fileNames:
+            files.append(_openForTee(x))
         bytes = os.read(pRead, bufferSize)
         while(bytes):
-            if encoding != 'raw':
-                data = bytes.decode(encoding)
-            else:
-                data = bytes
             for f in files:
+                if f is sys.stderr or f is sys.stdout:
+                    data = bytes.decode('utf8', errors='replace')
+                else:
+                    data = bytes
                 f.write(data)
                 f.flush()
                 debug(f'Wrote {data} to {f}')
             bytes = os.read(pRead, bufferSize)
     except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
         sys.stderr.write(f'ERROR: tee failed with an exception: {e}\n')
+        for l in lines:
+            sys.stderr.write(l)
     finally:
         for f in files:
-            f.close()
+            if f is not sys.stderr and f is not sys.stdout:
+                try:
+                    debug(f'closing {f}')
+                    f.close()
+                except:
+                    pass
             debug(f'Closed {f}')
         debug('child of tee finished')
 
-def createTee(files, encoding='utf-8', bufferSize=128):
+def _teeChild(pRead, pWrite, files, bufferSize):
+    try:
+        _teeChildWorker(pRead, pWrite, files, bufferSize)
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
+        print(''.join('BUG in shell.py ' + line for line in lines))
+
+TEE_STDOUT = object()
+TEE_STDERR = object()
+
+def createTee(files, bufferSize=128):
         """Get a file object that will mirror writes across multiple files objs
         Parameters:
-            files        A list of file-like objects
-            encoding     The encoding of the data written to files. Use 'raw' to pass
-                         the bytes directly.
+            files       A list where each element is one of the following:
+                        - A file name, to be opened for writing
+                        - A pair of (fileName, mode), where mode is 'w' or 'a'
+                        - One of the constants TEE_STDOUT or TEE_STDERR
             bufferSize   Control the size of the buffer between writes to the
                          resulting file object and the list of files.
         """
         pRead, pWrite = os.pipe()
-        pid = os.fork()
-        if pid == 0:
-            # Child -- Read bytes from the pipe and write them to the specified
-            #          files.
-            try:
-                _teeChild(pRead, pWrite, files, encoding, bufferSize)
-            except:
-                exc_type, exc_value, exc_traceback = sys.exc_info()
-                lines = traceback.format_exception(exc_type, exc_value, exc_traceback)
-                print(''.join('BUG in shell.py ' + line for line in lines))
-            finally:
-                os._exit(255)
-
-        else:
-            # Parent -- Return a file object wrapper around the pipe to the
-            #           child.
-            return os.fdopen(pWrite,'w')
+        p = Thread(target=_teeChild, args=(pRead, pWrite, files, bufferSize))
+        p.start()
+        return os.fdopen(pWrite,'w')
 
 if __name__ == "__main__":
     import doctest
