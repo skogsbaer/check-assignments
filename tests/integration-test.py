@@ -22,7 +22,7 @@ def assertExists(path):
 
 def assertFileNotEmpty(path):
     assertExists(path)
-    s = shell.readFile(path)
+    s = shell.readBinaryFile(path,)
     if not s:
         abort(f'File {path} is empty')
 
