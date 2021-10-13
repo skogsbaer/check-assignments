@@ -30,7 +30,10 @@ def runPythonTests(cfg: Config, args: TestArgs, studentDir: str, assignment: Ass
         args = ['--check', file]
     logFileName = shell.pjoin(studentDir, f'OUTPUT_{assignment.id}.txt')
     tee = shell.createTee([shell.TEE_STDOUT, logFileName])
-    result = shell.run(progArgs + args, onError='ignore', stderrToStdout=True, captureStdout=tee)
+    runArgs = progArgs + args
+    verbose(f'Running {runArgs}')
+    result = shell.run(runArgs, onError='ignore', stderrToStdout=True, captureStdout=tee,
+                       env={'PYTHONPATH': f'{wyppDir}/python/site-lib'})
     if result.exitcode == 0:
         print(green(f'Tests for {assignment.id} OK'))
     else:
