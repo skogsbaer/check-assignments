@@ -87,7 +87,7 @@ class RunError(ShellError):
         self.stderr = stderr
         msg = 'Command ' + repr(self.cmd) + " failed with exit code " + str(self.exitcode)
         if stderr:
-            msg = msg + 'stderr:\n' + str(stderr)
+            msg = msg + '\nstderr:\n' + str(stderr)
         super(RunError, self).__init__(msg)
 
 def splitOn(splitter):
@@ -122,6 +122,8 @@ def run(cmd,
         encoding='utf-8',
         stderrToStdout=False,
         cwd=None,
+        env=None,
+        freshEnv=None
         ):
     """Run the given command.
 
@@ -135,12 +137,14 @@ def run(cmd,
           output is returned. Use splitLines as this function to split the output into lines
         * An existing file descriptor or a file object: stdout goes to the file descriptor or file
       onError: what to do if the child process finishes with an exit code different from 0
-        * 'raise': raise an exception
+        * 'raise': raise an exception (the default)
         * 'die': terminate the whole process
         * 'ignore'
       input: string that is send to the stdin of the child process.
       encoding: the encoding for stdin and stdout. If encoding == 'raw',
         then the raw bytes are passed/returned.
+      env: additional environment variables
+      freshEnv: completely fresh environment
     Return value:
       A `RunResult` value, given access to the captured stdout of the child process (if it was
       captured at all) and to the exit code of the child process.
@@ -192,10 +196,18 @@ def run(cmd,
             input = input.encode(encoding)
     debug('Running command ' + repr(cmd) + ' with captureStdout=' + str(captureStdout) +
           ', onError=' + onError + ', input=' + input_str)
+    popenEnv = None
+    if env:
+        popenEnv = os.environ.copy()
+        popenEnv.update(env)
+    elif freshEnv:
+        popenEnv = freshEnv.copy()
+        if env:
+            popenEnv.update(env)
     pipe = subprocess.Popen(
         cmd, shell=(type(cmd) == str),
         stdout=stdout, stdin=stdin, stderr=stderr,
-        cwd=cwd
+        cwd=cwd, env=popenEnv
     )
     (stdoutData, stderrData) = pipe.communicate(input=input)
     if stdoutData is not None and encoding != 'raw':
@@ -319,16 +331,77 @@ class workingDir:
         cd(self.old_dir)
         return False # reraise expection
 
+def rm(path):
+    os.remove(path)
+
 def rmdir(d, recursive=False):
     if recursive:
         shutil.rmtree(d)
     else:
         os.rmdir(d)
 
+# See https://stackoverflow.com/questions/9741351/how-to-find-exit-code-or-reason-when-atexit-callback-is-called-in-python
+class ExitHooks(object):
+    def __init__(self):
+        self.exitCode = None
+        self.exception = None
+
+    def hook(self):
+        self._origExit = sys.exit
+        self._origExcHandler = sys.excepthook
+        sys.exit = self.exit
+        sys.excepthook = self.exc_handler
+
+    def exit(self, code=0):
+        if code is None:
+            myCode = 0
+        elif type(code) != int:
+            myCode = 1
+        else:
+            myCode = code
+        self.exitCode = myCode
+        self._origExit(code)
+
+    def exc_handler(self, exc_type, exc, *args):
+        self.exception = exc
+        self._origExcHandler(exc_type, exc, *args)
+
+    def isExitSuccess(self):
+        return (self.exitCode is None or self.exitCode == 0) and self.exception is None
+
+    def isExitFailure(self):
+        return not self.isExitSuccess()
+
+_hooks = ExitHooks()
+_hooks.hook()
+
+def registerAtExit(action, mode):
+    def f():
+        debug(f'Running exit hook, exit code: {e}, mode: {mode}')
+        if mode is True:
+            action()
+        elif mode in ['ifSuccess'] and hooks.isExitSuccess():
+            action()
+        elif mode in ['ifFailure'] and hooks.isExitFailure():
+            action()
+        else:
+            debug('Not running exit action')
+    atexit.register(f)
+
+# deleteAtExit is one of the following:
+# - True: the file is deleted unconditionally
+# - 'ifSuccess': the file is deleted if the program exists with code 0
+# - 'ifFailure': the file is deleted if the program exists with code != 0
+def mkTempFile(suffix='', prefix='', dir=None, deleteAtExit=True):
+    f = tempfile.mktemp(suffix, prefix, dir)
+    if deleteAtExit:
+        registerAtExit(lambda: rm(f), deleteAtExit)
+    return f
+
 def mkTempDir(suffix='', prefix='tmp', dir=None, deleteAtExit=True):
     d = tempfile.mkdtemp(suffix, prefix, dir)
     if deleteAtExit:
-        atexit.register(rmdir, d, True)
+        registerAtExit(lambda: rmdir(d, True), deleteAtExit)
     return d
 
 class tempDir:
@@ -457,6 +530,3 @@ def createTee(files, bufferSize=128):
         p.start()
         return os.fdopen(pWrite,'w')
 
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod(verbose=False)
