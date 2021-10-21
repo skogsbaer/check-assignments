@@ -1,54 +1,14 @@
 import shell
 import argparse
-import zipfile
-import fnmatch
-import os
-import shutil
-import itertools
 import exportCmd
 import plagiarismCmd
 import testCmd
 import importCmd
 import unzipCmd
+import filenamesCmd
 from ownLogging import *
 from utils import *
 from config import *
-
-def checkFilenames(config):
-    submissionDirs = collectSubmissionDirs(config)
-    for d in submissionDirs:
-        student = shell.basename(d)
-        files = set([shell.basename(f) for f in shell.ls(d, config.submissionFileGlob)])
-        expected = set(config.assignments)
-        missing = expected - files
-        superfluous = files - expected
-        if len(missing) > 0:
-            if len(superfluous) > 0:
-                warn(f'{student} misses assignments {missing} but has the following extra files: {superfluous}')
-            else:
-                verbose(f'{student} misses assignments {missing} and there are no extra files.')
-        else:
-            verbose(f'{student} has all assignments')
-
-def fixFilenames(config):
-    submissionDirs = collectSubmissionDirs(config)
-    for d in submissionDirs:
-        student = shell.basename(d)
-        files = set([shell.basename(f) for f in shell.ls(d, config.submissionFileGlob)])
-        expected = set(config.assignments)
-        missing = expected - files
-        superfluous = files - expected
-        for m in missing:
-            candidates = []
-            for s in superfluous:
-                if s.endswith(m) or len(superfluous) == 1:
-                   candidates.append(s)
-            if len(candidates) > 1:
-                print(f'Cannot fix name of assignment {m} for {student} because there is more than one matching file')
-            elif len(candidates) == 1:
-                c = candidates[0]
-                # Windows
-                shell.run(['mv', '-i', shell.pjoin(d, c), shell.pjoin(d, m)])
 
 
 def addComment(cfg):
@@ -125,12 +85,12 @@ def main():
     }
     config = mkConfig(baseDir, configDict)
     if args.cmd == 'checkFilenames':
-        checkFilenames(config)
+        filenamesCmd.checkFilenames(config)
     elif args.cmd == 'checkPlagiarism':
         a = plagiarismCmd.PlagiarismArgs(args.threshold, args.ignore, VERBOSE)
         plagiarismCmd.checkPlagiarism(config, a)
     elif args.cmd == 'fixFilenames':
-        fixFilenames(config)
+        filenamesCmd.fixFilenames(config)
     elif args.cmd == 'import':
         importArgs = importCmd.ImportArgs(args.file)
         importCmd.importCmd(config, importArgs)

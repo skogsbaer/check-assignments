@@ -77,6 +77,14 @@ class Assignment:
     def hasTests(self):
         disabled = getFromDicts(self.dicts, 'disable-tests', default=False)
         return not disabled
+    @property
+    def submissionFileGlob(self):
+        if self.kind == 'python':
+            return '*.py'
+        elif self.kind == 'java':
+            return '*.java'
+        else:
+            raise Exception(f"Unknown assignment kind: {self.kind}")
 
 @dataclass
 class Config:
@@ -122,13 +130,6 @@ class Config:
         return shell.pjoin(self.baseDir, 'rating.csv')
 
     @property
-    def lineCommentStart(self):
-        if self.fileExt == '.py':
-            return '# '
-        elif self.fileExt == '.hs':
-            return '-- '
-
-    @property
     def editor(self):
         if os.environ.get('USER') == 'swehr':
             return 'edi' # special case
@@ -146,6 +147,16 @@ class Config:
     @property
     def commentsFile(self):
         return 'COMMENTS.txt'
+
+    @property
+    def assignmentsGroupedByKind(self):
+        d = {}
+        for a in self.assignments:
+            if a.kind in d:
+                d[a.kind].append(a)
+            else:
+                d[a.kind] = [a]
+        return d
 
 def mkConfig(baseDir, configDict):
     if not shell.isdir(baseDir):

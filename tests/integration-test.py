@@ -40,6 +40,10 @@ with shell.tempDir(onException=False) as tmp:
         shell.run([checkAssignments, 'unzip'])
         assertExists(barFoo + 'assignment_01.py')
 
+        print('### checkFilenames ###')
+        shell.run([checkAssignments, 'checkFilenames'])
+        shell.run([checkAssignments, 'fixFilenames'])
+
         print('### addComment ###')
         shell.run([checkAssignments, 'addComment'])
         assertExists(barFoo + 'COMMENTS.txt')

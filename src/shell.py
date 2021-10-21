@@ -22,6 +22,8 @@ import traceback
 _pyshell_debug = os.environ.get('PYSHELL_DEBUG', 'no').lower()
 PYSHELL_DEBUG = _pyshell_debug in ['yes', 'true', 'on']
 
+HOME = os.environ.get('HOME')
+
 try:
     DEV_NULL = open('/dev/null')
 except:
@@ -310,9 +312,12 @@ def abort(msg):
 
 def mkdir(d, mode=0o777, createParents=False):
     if createParents:
-        os.makedirs(d, mode)
+        os.makedirs(d, mode, exist_ok=True)
     else:
         os.mkdir(d, mode)
+
+def touch(path):
+    run(['touch', path])
 
 def cd(x):
     debug('Changing directory to ' + x)
@@ -380,9 +385,9 @@ def registerAtExit(action, mode):
         debug(f'Running exit hook, exit code: {e}, mode: {mode}')
         if mode is True:
             action()
-        elif mode in ['ifSuccess'] and hooks.isExitSuccess():
+        elif mode in ['ifSuccess'] and _hooks.isExitSuccess():
             action()
-        elif mode in ['ifFailure'] and hooks.isExitFailure():
+        elif mode in ['ifFailure'] and _hooks.isExitFailure():
             action()
         else:
             debug('Not running exit action')
@@ -431,10 +436,13 @@ def ls(d, *globs):
     if not d:
         d = '.'
     for f in os.listdir(d):
-        for g in globs:
-            if fnmatch.fnmatch(f, g):
-                res.append(os.path.join(d, f))
-                break
+        if len(globs) == 0:
+            res.append(os.path.join(d, f))
+        else:
+            for g in globs:
+                if fnmatch.fnmatch(f, g):
+                    res.append(os.path.join(d, f))
+                    break
     return res
 
 def readBinaryFile(name):
