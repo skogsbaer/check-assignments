@@ -19,7 +19,7 @@ def getExtractedFiles(d):
 def unzip(config):
     submissionDirs = collectSubmissionDirs(config)
     for d in submissionDirs:
-        zipFiles = shell.ls(d, '*.zip')
+        zipFiles = shell.ls(d, '*.zip', '*.ZIP')
         if len(zipFiles) == 0:
             print(f'No zip-file in {d}')
             continue
