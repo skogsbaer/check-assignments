@@ -79,10 +79,15 @@ class Assignment:
         return not disabled
     @property
     def submissionFileGlob(self):
+        return '*' + self.submissionFileExt
+    @property
+    def submissionFileExt(self):
         if self.kind == 'python':
-            return '*.py'
+            return '.py'
         elif self.kind == 'java':
-            return '*.java'
+            return '.java'
+        elif self.kind == 'haskell':
+            return '.hs'
         else:
             raise Exception(f"Unknown assignment kind: {self.kind}")
 

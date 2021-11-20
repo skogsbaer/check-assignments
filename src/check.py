@@ -6,10 +6,10 @@ import testCmd
 import importCmd
 import unzipCmd
 import filenamesCmd
+import jplagCmd
 from ownLogging import *
 from utils import *
 from config import *
-
 
 def addComment(cfg):
     submissionDirs = collectSubmissionDirs(cfg)
@@ -49,6 +49,9 @@ def parseArgs():
                                  help='Similarity in percentage when two files are considered equal in the sense of plagiarism')
     checkPlagiarism.add_argument('--ignore', metavar='FILES', type=str, required=False,
                                  help='Ignore these assignment files when checking plagiarism')
+    jplag = subparsers.add_parser('jplag', help='Detect plagiarism via jplag')
+    jplag.add_argument('--mode', metavar='M', type=str, required=True,
+                       help='Either "merged" (checks all files at once) or "separate" (checks each file individually)')
     unzip = subparsers.add_parser('unzip', help='Unzip all files downloaded from moodle')
     addComment = subparsers.add_parser('addComment', help='Add a file COMMENTS.txt to all student directories')
     runTests = subparsers.add_parser('runTests', help='Run the tests, do interactive grading')
@@ -112,6 +115,9 @@ def main():
         testCmd.runTests(config, a)
     elif args.cmd == 'export':
         exportCmd.export(config)
+    elif args.cmd == 'jplag':
+        a = jplagCmd.JplagArgs(args.mode)
+        jplagCmd.jplag(config, a)
     else:
         warn('Unknown command: ' + args.cmd)
 
