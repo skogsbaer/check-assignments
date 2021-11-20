@@ -22,7 +22,9 @@ def addComment(cfg):
 Die Bewertung finden Sie in der Datei POINTS.txt.
 
 Falls für Ihre Abgabe automatisch Tests ausgeführt wurden, finden Sie die
-Ausgabe der Tests für die i-te Aufgabe in der Datei OUTPUT_i.txt.
+Ausgabe der Tests für die i-te Aufgabe in der Datei OUTPUT_i.txt
+bzw. OUTPUT_stud_i.txt (für Ihre eigenen Tests) und OUTPUT_tutor_i.txt
+(für die vom Korrigierenden durchgeführten Tests).
 
 Möglicherweise enthalten die Quelldateien aufgaben-spezifische Kommentare.
 Diese sind mit TUTOR/TUTORIN oder DOZENT/DOZENTIN gekennzeichnet, so dass
@@ -58,7 +60,9 @@ def parseArgs():
     runTests.add_argument('dirs', metavar='DIR', type=str, nargs='*',
                           help='The student directories to run the tests for.')
     runTests.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
-    runTests.add_argument('--interactive', help='Run the tests interactively', action='store_true', dest='interactive')
+    runTests.add_argument('--interactive', nargs='?', const='assignment',
+                         type=str, choices=['assignment', 'student'], dest='interactive',
+                         help='Run the tests interactively, stop after each student|assignment where assignment is the default.', )
     runTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
     importCmd = subparsers.add_parser('import', help='Import a .csv file from moodle to produce an Excel spreadsheet for rating')
     importCmd.add_argument('file', metavar='CSV_FILE', type=str, help='A .csv file from moodle')
@@ -111,7 +115,10 @@ def main():
             assignments = args.assignments.split(',')
         else:
             assignments = []
-        a = testCmd.TestArgs(args.dirs, assignments, args.interactive, stripSlashes(args.startAt))
+        a = testCmd.TestArgs(args.dirs,
+            assignments,
+            args.interactive,
+            stripSlashes(args.startAt))
         testCmd.runTests(config, a)
     elif args.cmd == 'export':
         exportCmd.export(config)

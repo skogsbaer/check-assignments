@@ -2,10 +2,10 @@ from __future__ import annotations
 from config import *
 from ansi import *
 from ownLogging import *
-import utils
 import sys
 
-def runPythonTests(cfg: Config, args: TestArgs, studentDir: str, assignment: Assignment):
+def runPythonTests(ctx, studentDir: str, assignment: Assignment):
+    cfg = ctx.cfg
     testFiles = assignment.getTestFiles(cfg.testDir)
     if len(testFiles) > 1:
         abort(f'Python supports only one test case')

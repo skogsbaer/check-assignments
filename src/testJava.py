@@ -3,8 +3,10 @@ import shell
 from utils import *
 from ansi import *
 from ownLogging import *
+from config import Config, Assignment
 
-def runJavaTests(cfg: Config, args: TestArgs, studentDir: str, assignment: Assignment):
+def runJavaTests(ctx, studentDir: str, assignment: Assignment):
+    cfg = ctx.cfg
     gradleProps = {
         'testFilter': assignment.getValue('test-filter', ''),
         'testDir': cfg.testDir,
