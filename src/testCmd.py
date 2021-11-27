@@ -12,25 +12,28 @@ import testPython
 import testJava
 import utils
 import spreadsheet
+
 @dataclass
 class TestArgs:
     dirs: List[str]
     assignments: List[str] # take all if empty
     interactive: bool
     startAt: str
+    sanityCheck: bool
 
 class Context:
     def __init__(self, cfg: Config, args: TestArgs):
         self.cfg = cfg
         self.args = args
         self.acc = None
-    def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment, colPrefix: str, result: str):
-        (name, _) = utils.parseSubmissionDir(self.cfg, studentDir)
-        title = f'{colPrefix} A{assignment.id}'
+        self.failed = None # None means unknown, True definitive failure and False definitive success
+    def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment, colSuffix: str, result: str):
+        (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
+        title = f'A{assignment.id} {colSuffix}'
         try:
             path = self.cfg.spreadsheetPath
-            spreadsheet.enterData(path, 'Vollständiger Name', name, title, result)
-            print(f'Stored test result for {name} in {path}')
+            spreadsheet.enterData(path, 'ID', f"Teilnehmer/in{id.strip()}", title, result)
+            print(f'Stored test result for {name} ({id}) in {path}')
         except ValueError as e:
             print(f"ERROR storing test result in spreadsheet: {e}")
 
@@ -128,6 +131,7 @@ def interactiveLoopStudent(cfg, args, studentDir, assignments):
                 run()
             elif cmd == CONTINUE_COMMAND:
                 return
+    return ctx.failed
 
 def runTests(cfg, args):
     dirs = args.dirs
@@ -142,6 +146,8 @@ def runTests(cfg, args):
                 dirs.append(x)
             else:
                 print(f'Skipping {x} as requested')
+    failures = []
+    success = []
     for d in dirs:
         assignments = cfg.assignments
         if args.assignments:
@@ -151,4 +157,16 @@ def runTests(cfg, args):
                     assignments.append(a)
         if not assignments:
             print(f'No assignments found or selected!')
-        interactiveLoopStudent(cfg, args, d, assignments)
+        failed = interactiveLoopStudent(cfg, args, d, assignments)
+        if failed is True:
+            failures.append(d)
+        elif failed is False:
+            success.append(d)
+    if failures:
+        print()
+        print(red(f'The following students failed: '))
+        for f in failures:
+            print(f'  - {f}')
+    else:
+        if len(success) == len(dirs):
+            print(green(f'Checks succeeded for all {len(success)} students'))

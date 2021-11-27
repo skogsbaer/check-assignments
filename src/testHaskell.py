@@ -10,6 +10,15 @@ import utils
 moduleRe = re.compile(r'^module\s+([\w.]+)\s+where')
 moduleReNoWhere = re.compile(r'^module\s+([\w.]+)')
 
+def insertMainModule(lines):
+    idx = 0
+    for i, l in enumerate(lines):
+        l = l.strip()
+        if not (l == '' or l.startswith('{-')):
+            idx = i
+            break
+    lines.insert(idx, 'module Main where')
+
 def fixStudentCode(f):
     """
     Add "module Main where", remove old module line if existing.
@@ -34,7 +43,7 @@ def fixStudentCode(f):
     if foundWeirdModLine and not foundModuleLine:
         print(f'Could not patch student file {f}: weird module line detected')
         return f
-    newLines.insert(0, 'module Main where')
+    insertMainModule(newLines)
     newName = shell.removeExt(f) + '_fixed.hs'
     open(newName, 'w').write('\n'.join(newLines))
     return newName
@@ -61,15 +70,22 @@ def runHaskellTests(ctx, studentDir: str, assignment: Assignment):
     if ctx.acc is None:
         ctx.acc = []
     studMain = fixStudentCode(assignment.getMainFile(studentDir))
+    sanityCheck = ctx.args.sanityCheck
     if studMain not in ctx.acc:
-        logFileStud = shell.pjoin(studentDir, f'OUTPUT_student_{assignment.id}.txt')
-        result = _runHaskellTests(studMain,
-                                  withGhciOpts(['stack', 'ghci', studMain], ['-e', 'main']),
-                                  logFileStud)
-        ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Stud Tests', result)
+        if sanityCheck:
+            res = _typecheck(studMain, ['stack', 'exec', 'ghci', '--', studMain])
+            ctx.failed = not res
+        else:
+            logFileStud = shell.pjoin(studentDir, f'OUTPUT_student_{assignment.id}.txt')
+            result = _runHaskellTests(studMain,
+                                      withGhciOpts(['stack', 'ghci', studMain], ['-e', 'main']),
+                                      logFileStud)
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Stud Tests', result)
         ctx.acc = ctx.acc + [studMain]
     else:
         print(f"Students tests in {studMain} already run.")
+    if sanityCheck:
+        return
     testFiles = assignment.getTestFiles(ctx.cfg.testDir)
     for testFile in testFiles:
         print(f"Running tutor's tests in {testFile}")
@@ -99,6 +115,15 @@ def messageTestOutput(out):
         if not ignoreLine(line):
             res.append(line)
     return '\n'.join(res)
+
+def _typecheck(file, cmdList):
+    result = shell.run(cmdList, onError='ignore', input=':quit')
+    if result.exitcode == 0:
+        print(green(f'{file} compiled successfully'))
+        return True
+    else:
+        print(red('f{file} has compile errors'))
+        return False
 
 def _runHaskellTests(file, cmdList, logFile):
     result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',

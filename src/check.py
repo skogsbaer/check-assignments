@@ -64,6 +64,8 @@ def parseArgs():
                          type=str, choices=['assignment', 'student'], dest='interactive',
                          help='Run the tests interactively, stop after each student|assignment where assignment is the default.', )
     runTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
+    runTests.add_argument('--sanityCheck', help='Only perform sanity checks on submission, do not run tests',
+                          action='store_true', default=False)
     importCmd = subparsers.add_parser('import', help='Import a .csv file from moodle to produce an Excel spreadsheet for rating')
     importCmd.add_argument('file', metavar='CSV_FILE', type=str, help='A .csv file from moodle')
     prepareCmd = subparsers.add_parser('prepare', help='Shortcut for import+unzip+addComment')
@@ -118,7 +120,8 @@ def main():
         a = testCmd.TestArgs(args.dirs,
             assignments,
             args.interactive,
-            stripSlashes(args.startAt))
+            stripSlashes(args.startAt),
+            args.sanityCheck)
         testCmd.runTests(config, a)
     elif args.cmd == 'export':
         exportCmd.export(config)

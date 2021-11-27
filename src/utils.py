@@ -29,9 +29,11 @@ def collectSubmissionDirs(config, baseDir=None, includeBoth=False):
     return sorted(result)
 
 def collectSubmissionFiles(config, d):
-    files = shell.ls(d, config.submissionFileGlob)
-    expected = set(config.assignments)
-    return sorted([f for f in files if shell.basename(f) in expected])
+    globs = set([a.submissionFileGlob for a in config.assignments])
+    files = []
+    for g in globs:
+        files = files + shell.ls(d, g)
+    return sorted(files)
 
 def findSubmissionDirForId(config, x):
     """
