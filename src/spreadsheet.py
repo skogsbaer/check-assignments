@@ -29,7 +29,7 @@ def enterData(path: str, idColumn: str, idValue: str, dataColumn: str, data: str
     rowIx = None
     for row in range(1, sheet.max_row + 1):
         cell = sheet.cell(column=idColumnIx, row=row)
-        if cell:
+        if cell and cell.value:
             v = cell.value.strip()
             if v == idValue:
                 if rowIx is not None:

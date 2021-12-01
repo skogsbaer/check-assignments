@@ -105,7 +105,8 @@ haskellTestRe = re.compile(r'^Cases:\s*(\d+)\s*Tried:\s*(\d+)\s*Errors:\s*(\d+)\
 
 def ignoreLine(line):
     return line.startswith("Warning: Couldn't find a component for file target") or \
-        line.strip() == 'Attempting to load the file anyway.'
+        line.strip() == 'Attempting to load the file anyway.' or \
+        line.strip() == 'Configuring GHCi with the following packages:'
 
 def messageTestOutput(out):
     out = out.replace('\r', '\n')
@@ -125,15 +126,31 @@ def _typecheck(file, cmdList):
         print(red('f{file} has compile errors'))
         return False
 
+def removeRedundantNewlines(lines):
+    result = []
+    lastWasNewline = False
+    for l in lines:
+        if not l:
+            if not lastWasNewline:
+                result.append('')
+            lastWasNewline = True
+        else:
+            lastWasNewline = False
+            result.append(l)
+    return '\n'.join(result)
+
 def _runHaskellTests(file, cmdList, logFile):
     result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
                        captureStdout=True, stderrToStdout=True)
     out = messageTestOutput(result.stdout)
-    utils.writeFile(logFile, out)
     errMsg = None
     okMsg = None
     resultStr = None
     if result.exitcode in [0, 1]:
+        logLines = ["Output of running instructor's tests",
+                    "=====================================",
+                    ""]
+        lastCasesLine = None
         cases = None
         failing = None
         for line in out.split('\n'):
@@ -144,6 +161,13 @@ def _runHaskellTests(file, cmdList, logFile):
                 errors = int(m.group(3))
                 failures = int(m.group(4))
                 failing = errors + failures
+                lastCasesLine = line
+            else:
+                logLines.append(line)
+        logLines.append('')
+        if lastCasesLine:
+            logLines.append(lastCasesLine)
+        utils.writeFile(logFile, removeRedundantNewlines(logLines))
         if cases is None:
             errMsg = f'No test output found for {file}'
             resultStr = 'no test output'
@@ -159,9 +183,11 @@ def _runHaskellTests(file, cmdList, logFile):
     elif result.exitcode in [124, -9]:
         errMsg = f'Test TIMEOUT'
         resultStr = 'timeout'
+        utils.writeFile(logFile, out)
     else:
         errMsg = f'Tests for {file} FAILED with exit code {result.exitcode}, see above'
         resultStr = 'run failed'
+        utils.writeFile(logFile, out)
     if errMsg:
         print(result.stdout)
         print(red(errMsg))
