@@ -79,7 +79,21 @@ class Assignment:
     def copyItems(self):
         return self.getAsList('copy')
     def getTestFiles(self, d):
-        return self.getAsFileList(d, Keys.testFiles) + self.getAsFileList(d, Keys.testFile)
+        result = []
+        for x in self.getAsList(Keys.testFiles):
+            if isinstance(x, dict):
+                for k, v in x.items():
+                    testFile = shell.pjoin(d, v)
+                    result.append( (k, testFile) )
+            elif isinstance(x, str):
+                try:
+                    i = x.index(':')
+                    k = x[:i]
+                    v = shell.pjoin(d, x[i+1:])
+                    result.append( (k, v) )
+                except ValueError:
+                    result.append( (x, shell.pjoin(d, x)) )
+        return result
     @property
     def hasTests(self):
         disabled = getFromDicts(self.dicts, 'disable-tests', default=False)
@@ -99,8 +113,8 @@ class Assignment:
             raise Exception(f"Unknown assignment kind: {self.kind}")
     def studentOutputFile(self, studentDir):
         return shell.pjoin(studentDir, f'OUTPUT_student_{self.id}.txt')
-    def outputFile(self, studentDir):
-        return shell.pjoin(studentDir, f'OUTPUT_{self.id}.txt')
+    def outputFile(self, studentDir, suffix=''):
+        return shell.pjoin(studentDir, f'OUTPUT_{self.id}{suffix}.txt')
 
 def expandVarsInStr(s, vars):
     return string.Template(s).safe_substitute(vars)

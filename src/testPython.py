@@ -11,7 +11,7 @@ def runPythonTests(ctx, studentDir: str, assignment: Assignment):
         abort(f'Python supports only one test case')
         return
     elif len(testFiles) == 1:
-        testFile = testFiles[0]
+        testFile = testFiles[0][1]
     else:
         testFile = None
     file = assignment.getMainFile(studentDir, fail=True)

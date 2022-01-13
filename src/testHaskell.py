@@ -99,9 +99,12 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
         return
     testFiles = assignment.getTestFiles(ctx.cfg.testDir)
     results = {}
-    for testFile in testFiles:
+    for testId, testFile in testFiles:
         print(f"Running tutor's tests in {testFile}")
-        logFileTutor = assignment.outputFile('.')
+        logFileSuffix = ''
+        if len(testFiles) > 1:
+            logFileSuffix = f'_{testId}'
+        logFileTutor = assignment.outputFile('.', suffix=logFileSuffix)
         modName = findModuleName(testFile)
         if modName is None:
             print(red('No module name found in tutor test code. Cannot run tests!'))
