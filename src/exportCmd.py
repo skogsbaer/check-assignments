@@ -132,5 +132,5 @@ def export(cfg):
         allDirs = collectSubmissionDirs(cfg, baseDir='.', includeBoth=True)
         shell.removeFile(cfg.feedbackZip)
         # shell.run(['zip', '-q', '-r', cfg.feedbackZip] + allDirs + ['-x', '*/TUTOR/*'])
-        zipDirs(cfg.feedbackZip, allDirs)
+        zipDirs(cfg.feedbackZip, allDirs, excludeDirs=['.stack-work'])
     print(f'Wrote {shell.pjoin(cfg.baseDir, cfg.feedbackZip)}')

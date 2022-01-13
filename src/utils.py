@@ -32,7 +32,7 @@ def collectSubmissionFiles(config, d):
     globs = set([a.submissionFileGlob for a in config.assignments])
     files = []
     for g in globs:
-        files = files + shell.ls(d, g)
+        files = files + shell.run(['find', d, '-name', g], captureStdout=shell.splitLines).stdout
     return sorted(files)
 
 def findSubmissionDirForId(config, x):
@@ -98,13 +98,18 @@ def copyFileIfNotExists(srcDir, path, targetDir):
     else:
         shell.cp(srcPath, tgtPath)
 
-def zipDirs(zipPath, dirs):
+def zipDirs(zipPath, dirs, excludeDirs=[]):
     zf = zipfile.ZipFile(zipPath, 'w', zipfile.ZIP_DEFLATED)
     for d in dirs:
-        for root, dirs, files in os.walk(d):
+        for dirpath, dirs, files in os.walk(d):
+            for x in excludeDirs:
+                try:
+                    dirs.remove(x)
+                except ValueError:
+                    pass
             for f in files:
-                zf.write(os.path.join(root, f),
-                         os.path.relpath(os.path.join(root, f),
+                zf.write(os.path.join(dirpath, f),
+                         os.path.relpath(os.path.join(dirpath, f),
                                          os.path.join(d, '..')))
     zf.close()
 
