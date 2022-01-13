@@ -29,7 +29,7 @@ def unzip(config):
         zipFile = zipFiles[0]
         sysTempDir = tempfile.gettempdir()
         with tempfile.TemporaryDirectory(dir=sysTempDir) as tmpDir:
-            zipfile.ZipFile(zipFile).extractall(tmpDir)
+            shell.run(['unzip', zipFile, '-d', tmpDir])
             extractedFiles = getExtractedFiles(tmpDir)
             if shell.basename(zipFile) in [shell.basename(f) for f in extractedFiles]:
                 warn(f"Zip-file {zipFile} contains another zip-file with the same name. Cannot continue.")
