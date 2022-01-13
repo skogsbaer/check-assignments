@@ -1,0 +1,23 @@
+kind: haskell
+dir: /Users/swehr/Teaching/WS2122/AdvancedProg-Praktikum/P04-real-world
+test-dir: ${dir}/code/tutor/
+copy:
+  - ${dir}/stack.yaml
+  - ${dir}/package.yaml
+  - ${dir}/sample-dir
+assignments:
+  1:
+    points: 13
+    main-file: ex01/Files.hs
+    test-files:
+    - TutorTests04_01_a.hs
+    - TutorTests04_01_b.hs
+  2:
+    points: 23
+    main-file: ex02/ticTacToe.hs
+    test-files:
+    - TutorTests04_02_a.hs
+    - TutorTests04_02_b.hs
+    - TutorTests04_02_c.hs
+    - TutorTests04_02_d.hs
+    - TutorTests04_02_g.hs

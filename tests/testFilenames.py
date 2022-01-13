@@ -6,10 +6,10 @@ import ownLogging
 
 def mkConfig(baseDir):
     assignments = [
-        config.Assignment('1', 1, 'python', {'main-file': '1.py'}),
-        config.Assignment('2', 1, 'python', {'main-file': '2.py'}),
-        config.Assignment('3', 1, 'java', {'main-file': '3.java'}),
-        config.Assignment('4', 1, 'java', {'main-file': '4.java'}),
+        config.Assignment(1, 1, 'python', {'main-file': '1.py'}),
+        config.Assignment(2, 1, 'python', {'main-file': '2.py'}),
+        config.Assignment(3, 1, 'java', {'main-file': '3.java'}),
+        config.Assignment(4, 1, 'java', {'main-file': '4.java'}),
     ]
     return config.Config(baseDir, {}, assignments, 'tests')
 

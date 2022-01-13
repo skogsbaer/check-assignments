@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import *
 import yaml
 import utils
+import string
 
 def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True):
     if type(dicts) is not list:
@@ -36,7 +37,7 @@ class Assignment:
     id: int
     points: int
     kind: str
-    dicts: List[Dict]
+    dicts: list[Dict]
     def __post_init__(self):
         if type(self.id) != int:
             raise TypeError("Assignment.id must be an int")
@@ -74,6 +75,9 @@ class Assignment:
     def getAsFileList(self, d, k):
         items = self.getAsList(k)
         return [shell.pjoin(d, x) for x in items]
+    @property
+    def copyItems(self):
+        return self.getAsList('copy')
     def getTestFiles(self, d):
         return self.getAsFileList(d, Keys.testFiles) + self.getAsFileList(d, Keys.testFile)
     @property
@@ -93,10 +97,29 @@ class Assignment:
             return '.hs'
         else:
             raise Exception(f"Unknown assignment kind: {self.kind}")
-    def studentOuputFile(self, studentDir):
+    def studentOutputFile(self, studentDir):
         return shell.pjoin(studentDir, f'OUTPUT_student_{self.id}.txt')
-    def ouputFile(self, studentDir):
+    def outputFile(self, studentDir):
         return shell.pjoin(studentDir, f'OUTPUT_{self.id}.txt')
+
+def expandVarsInStr(s, vars):
+    return string.Template(s).safe_substitute(vars)
+
+def expandVars(y, vars):
+    if isinstance(y, str):
+        return expandVarsInStr(y, vars)
+    elif isinstance(y, list):
+        result = []
+        for x in y:
+            result.append(expandVars(x, vars))
+        return result
+    elif isinstance(y, dict):
+        result = {}
+        for k, v in y.items():
+            result[k] = expandVars(v, vars)
+        return result
+    else:
+        return y
 
 @dataclass
 class Config:
@@ -118,6 +141,7 @@ class Config:
 
     @staticmethod
     def parse(baseDir, configDict, ymlDict):
+        ymlDict = expandVars(ymlDict, ymlDict)
         assignments= []
         for k, v in ymlDict['assignments'].items():
             a = Assignment.parse(k, [v, ymlDict])
