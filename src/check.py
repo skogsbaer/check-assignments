@@ -23,8 +23,7 @@ Die Bewertung finden Sie in der Datei POINTS.txt.
 
 Falls für Ihre Abgabe automatisch Tests ausgeführt wurden, finden Sie die
 Ausgabe der Tests für die i-te Aufgabe in der Datei OUTPUT_i.txt
-bzw. OUTPUT_stud_i.txt (für Ihre eigenen Tests) und OUTPUT_tutor_i.txt
-(für die vom Korrigierenden durchgeführten Tests).
+bzw. OUTPUT_student_i.txt (für Ihre eigenen Tests).
 
 Möglicherweise enthalten die Quelldateien aufgaben-spezifische Kommentare.
 Diese sind mit TUTOR/TUTORIN oder DOZENT/DOZENTIN gekennzeichnet, so dass

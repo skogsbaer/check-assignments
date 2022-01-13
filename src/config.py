@@ -33,10 +33,13 @@ class Keys:
 
 @dataclass
 class Assignment:
-    id: str
+    id: int
     points: int
     kind: str
     dicts: List[Dict]
+    def __post_init__(self):
+        if type(self.id) != int:
+            raise TypeError("Assignment.id must be an int")
     def parse(id, dicts):
         points = getFromDicts(dicts, 'points', int)
         kind = getFromDicts(dicts, 'kind')
@@ -90,6 +93,10 @@ class Assignment:
             return '.hs'
         else:
             raise Exception(f"Unknown assignment kind: {self.kind}")
+    def studentOuputFile(self, studentDir):
+        return shell.pjoin(studentDir, f'OUTPUT_student_{self.id}.txt')
+    def ouputFile(self, studentDir):
+        return shell.pjoin(studentDir, f'OUTPUT_{self.id}.txt')
 
 @dataclass
 class Config:

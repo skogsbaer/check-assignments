@@ -4,6 +4,7 @@ from utils import *
 from ownLogging import *
 from typing import *
 from ansi import *
+import shell
 import re
 import os
 from config import Config, Assignment
@@ -27,9 +28,16 @@ class Context:
         self.args = args
         self.acc = None
         self.failed = None # None means unknown, True definitive failure and False definitive success
-    def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment, colSuffix: str, result: str):
+    def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment, colSuffix: str, result: str, testFile: str = None):
         (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
-        title = f'A{assignment.id} {colSuffix}'
+        suffix = ''
+        if testFile:
+            (testName, _) = shell.splitExt(shell.basename(testFile))
+            try:
+                suffix = ' ' + stringAfterLastOccurrenceOf(testName, str(assignment.id) + '_')
+            except ValueError:
+                suffix = ' ' + testName
+        title = f'A{assignment.id} {colSuffix}{suffix}'
         try:
             path = self.cfg.spreadsheetPath
             spreadsheet.enterData(path, 'ID', f"Teilnehmer/in{id.strip()}", title, result)

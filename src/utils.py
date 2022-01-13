@@ -117,3 +117,7 @@ def stripTrailingSlash(x):
     if x.endswith('/'):
         return stripTrailingSlash(x[:-1])
     return x
+
+def stringAfterLastOccurrenceOf(s: str, part: str):
+    i = s.rindex(part)
+    return s[i + len(part):]

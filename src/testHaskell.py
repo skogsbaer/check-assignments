@@ -6,6 +6,8 @@ from ownLogging import *
 from config import Config, Assignment
 import spreadsheet
 import utils
+from testCommon import *
+from typing import *
 
 moduleRe = re.compile(r'^module\s+([\w.]+)\s+where')
 moduleReNoWhere = re.compile(r'^module\s+([\w.]+)')
@@ -24,18 +26,15 @@ def fixStudentCode(f):
     Add "module Main where", remove old module line if existing.
     Returns the filename of the rewritten file (if necessary).
     """
+    if not shell.isFile(f):
+        return f
     newLines = []
     foundWeirdModLine = False
     foundModuleLine = False
     for l in open(f).readlines():
         m = moduleRe.match(l)
         if m:
-            foundModuleLine = True
-            modName = m.group(1)
-            if modName == 'Main':
-                return f
-            else:
-                newLines.append('module Main where')
+            return f
         else:
             newLines.append(l.rstrip())
             if l.strip().startswith('module'):
@@ -76,10 +75,13 @@ def runHaskellTests(ctx, studentDir: str, assignment: Assignment):
             res = _typecheck(studMain, ['stack', 'exec', 'ghci', '--', studMain])
             ctx.failed = not res
         else:
-            logFileStud = shell.pjoin(studentDir, f'OUTPUT_student_{assignment.id}.txt')
-            result = _runHaskellTests(studMain,
+            logFileStud = assignment.studentOuputFile(studentDir)
+            result = _runHaskellTests(assignment.id,
+                                      studentDir,
+                                      studMain,
                                       withGhciOpts(['stack', 'ghci', studMain], ['-e', 'main']),
-                                      logFileStud)
+                                      logFileStud,
+                                      'student')
             ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Stud Tests', result)
         ctx.acc = ctx.acc + [studMain]
     else:
@@ -87,17 +89,23 @@ def runHaskellTests(ctx, studentDir: str, assignment: Assignment):
     if sanityCheck:
         return
     testFiles = assignment.getTestFiles(ctx.cfg.testDir)
+    results = {}
     for testFile in testFiles:
         print(f"Running tutor's tests in {testFile}")
-        logFileTutor = shell.pjoin(studentDir, f'OUTPUT_tutor_{assignment.id}.txt')
+        logFileTutor = shell.pjoin(studentDir, f'OUTPUT_{assignment.id}.txt')
         modName = findModuleName(testFile)
         if modName is None:
             print(red('No module name found in tutor test code. Cannot run tests!'))
         else:
             allOpts = withGhciOpts(['stack', 'ghci', studMain, testFile],
                                    ['-i' + ctx.cfg.testDir, '-e', f'{modName}.tutorMain'])
-            result = _runHaskellTests(studMain, allOpts, logFileTutor)
-            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result)
+            result = _runHaskellTests(assignment.id, studentDir, studMain, allOpts, logFileTutor, 'instructor')
+        results[testFile] = result
+    if len(results) == 1:
+        ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result)
+    else:
+        for testFile, result in results.items():
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result, testFile=testFile)
     if not testFiles:
         print("No tutor's tests defined")
 
@@ -108,7 +116,7 @@ def ignoreLine(line):
         line.strip() == 'Attempting to load the file anyway.' or \
         line.strip() == 'Configuring GHCi with the following packages:'
 
-def messageTestOutput(out):
+def massageTestOutput(out):
     out = out.replace('\r', '\n')
     res = []
     for line in out.split('\n'):
@@ -139,10 +147,14 @@ def removeRedundantNewlines(lines):
             result.append(l)
     return '\n'.join(result)
 
-def _runHaskellTests(file, cmdList, logFile):
-    result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
-                       captureStdout=True, stderrToStdout=True)
-    out = messageTestOutput(result.stdout)
+def _runHaskellTests(assignmentId, studentDir, file, cmdList, logFile, kind: Literal['student', 'instructor']):
+    resultScript = runTestScriptIfExisting(assignmentId, studentDir, kind)
+    if resultScript is None:
+        result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
+                           captureStdout=True, stderrToStdout=True)
+    else:
+        result = resultScript
+    out = massageTestOutput(result.stdout)
     errMsg = None
     okMsg = None
     resultStr = None
@@ -176,7 +188,10 @@ def _runHaskellTests(file, cmdList, logFile):
             resultStr = round(1 - failing/cases, 2)
         elif cases == 0:
             errMsg = f'No tests defined in {file}'
-            resultStr = 'no tests'
+            if kind == 'student':
+                resultStr = 'no tests'
+            else:
+                resultStr = 1.0
         else:
             okMsg = f'Tests for {file} OK ({cases} test cases)'
             resultStr = 1.0
