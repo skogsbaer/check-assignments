@@ -121,3 +121,31 @@ def stripTrailingSlash(x):
 def stringAfterLastOccurrenceOf(s: str, part: str):
     i = s.rindex(part)
     return s[i + len(part):]
+
+def fileEquals(path1: str, path2: str):
+    if shell.isFile(path1) and shell.isFile(path2):
+        return readBinaryFile(path1) == readBinaryFile(path2)
+    else:
+        return False
+
+def dirEquals(path1: str, path2: str):
+    if shell.isDir(path1) and shell.isDir(path2):
+        d1 = dict([(shell.basename(x), x) for x in shell.ls(path1, '*')])
+        d2 = dict([(shell.basename(x), x) for x in shell.ls(path2, '*')])
+        if d1.keys() != d2.keys():
+            return False
+        for k, v1 in d1.items():
+            v2 = d2[k]
+            if not fileSystemItemEquals(v1, v2):
+                return False
+        return True
+    else:
+        return False
+
+def fileSystemItemEquals(path1: str, path2: str):
+    if fileEquals(path1, path2):
+        return True
+    if dirEquals(path1, path2):
+        return True
+    else:
+        return False

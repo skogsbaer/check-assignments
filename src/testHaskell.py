@@ -5,6 +5,7 @@ from ansi import *
 from ownLogging import *
 from config import Config, Assignment
 import spreadsheet
+import yaml
 import utils
 from testCommon import *
 from typing import *
@@ -65,19 +66,27 @@ def withGhciOpts(opts, ghciOpts):
         res.append(x)
     return res
 
+def getPackageName(path):
+    ymlDict = yaml.load(utils.readFile(path), Loader=yaml.FullLoader)
+    return ymlDict['name']
+
 def runHaskellTests(ctx, studentDir: str, assignment: Assignment):
+    with shell.workingDir(studentDir):
+        runHaskellTestsInStudentDir(ctx, studentDir, assignment)
+
+def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
     if ctx.acc is None:
         ctx.acc = []
-    studMain = fixStudentCode(assignment.getMainFile(studentDir))
+    pkg = getPackageName('package.yaml')
+    studMain = fixStudentCode(assignment.getMainFile('.'))
     sanityCheck = ctx.args.sanityCheck
     if studMain not in ctx.acc:
         if sanityCheck:
             res = _typecheck(studMain, ['stack', 'exec', 'ghci', '--', studMain])
             ctx.failed = not res
         else:
-            logFileStud = assignment.studentOuputFile(studentDir)
+            logFileStud = assignment.studentOutputFile('.')
             result = _runHaskellTests(assignment.id,
-                                      studentDir,
                                       studMain,
                                       withGhciOpts(['stack', 'ghci', studMain], ['-e', 'main']),
                                       logFileStud,
@@ -92,14 +101,15 @@ def runHaskellTests(ctx, studentDir: str, assignment: Assignment):
     results = {}
     for testFile in testFiles:
         print(f"Running tutor's tests in {testFile}")
-        logFileTutor = shell.pjoin(studentDir, f'OUTPUT_{assignment.id}.txt')
+        logFileTutor = assignment.outputFile('.')
         modName = findModuleName(testFile)
         if modName is None:
             print(red('No module name found in tutor test code. Cannot run tests!'))
         else:
-            allOpts = withGhciOpts(['stack', 'ghci', studMain, testFile],
-                                   ['-i' + ctx.cfg.testDir, '-e', f'{modName}.tutorMain'])
-            result = _runHaskellTests(assignment.id, studentDir, studMain, allOpts, logFileTutor, 'instructor')
+            allOpts = withGhciOpts(
+                ['stack', 'ghci', studMain, testFile, '--flag', f'{pkg}:test-mode'],
+                ['-i' + ctx.cfg.testDir, '-e', f'{modName}.tutorMain'])
+            result = _runHaskellTests(assignment.id, studMain, allOpts, logFileTutor, 'instructor')
         results[testFile] = result
     if len(results) == 1:
         ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result)
@@ -147,8 +157,8 @@ def removeRedundantNewlines(lines):
             result.append(l)
     return '\n'.join(result)
 
-def _runHaskellTests(assignmentId, studentDir, file, cmdList, logFile, kind: Literal['student', 'instructor']):
-    resultScript = runTestScriptIfExisting(assignmentId, studentDir, kind)
+def _runHaskellTests(assignmentId, file, cmdList, logFile, kind: Literal['student', 'instructor']):
+    resultScript = runTestScriptIfExisting(assignmentId, kind)
     if resultScript is None:
         result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
                            captureStdout=True, stderrToStdout=True)

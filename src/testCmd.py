@@ -98,7 +98,28 @@ def prettyStudent(cfg, studentDir):
         x = stripTrailingSlash(x)
         return x
 
+def moveToBackup(path):
+    if not shell.exists(path):
+        return
+    for i in range(1000):
+        backupName = shell.pjoin(shell.dirname(path), '.' + shell.basename(path) + ".bak")
+        if i > 0:
+            backupName = backupName + "." + str(i)
+        if not shell.exists(backupName):
+            shell.mv(path, backupName)
+            return
+    raise ValueError(f"tpp many backups for {path}")
+
+def copyIntoStudentDir(assignment: Assignment, studentDir: str):
+    for src in assignment.copyItems:
+        target = shell.pjoin(studentDir, shell.basename(src))
+        if not fileSystemItemEquals(src, target):
+            print(f'Copying {src} to {studentDir} ...')
+            moveToBackup(target)
+            shell.cp(src, studentDir)
+
 def runTestsForAssignment(ctx, studentDir, assignment):
+    copyIntoStudentDir(assignment, studentDir)
     print(blue(f'Checking assignment {assignment.id} for student {prettyStudent(ctx.cfg, studentDir)}'))
     k = assignment.kind
     if k in TEST_DICT:
@@ -114,7 +135,7 @@ def interactiveLoopAssignment(ctx, studentDir, a):
             print()
             print(blue(f'Just checked assignment {a.id} for student {prettyStudent(ctx.cfg, studentDir)}'))
             mainFile = a.getMainFile(studentDir)
-            cmd = readCommand(ctx, mainFile)
+            cmd = readCommand(ctx.cfg, ctx.args, mainFile)
             if cmd == INSPECT_COMMAND:
                 inspectFile(ctx, mainFile)
             elif cmd == RERUN_COMMAND:

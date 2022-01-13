@@ -6,14 +6,14 @@ from ansi import *
 
 TestKind = Literal['student', 'instructor']
 
-def runTestScriptIfExisting(assignmentId: int, studentDir: str, kind: TestKind):
+def runTestScriptIfExisting(assignmentId: int, kind: TestKind):
     if kind == 'student':
-        script = "./run-student-tests.sh"
+        script = "../run-student-tests.sh"
     else:
-        script = "./run-tests.sh"
+        script = "../run-tests.sh"
     if shell.isFile(script):
         print(blue(f"Running test script {script}"))
-        cmdList = [script, studentDir, str(assignmentId)]
+        cmdList = [script, str(assignmentId)]
         return shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
                            captureStdout=True, stderrToStdout=True)
     else:
