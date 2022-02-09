@@ -1,3 +1,14 @@
+import os
+import tempfile
+
+def saveExcelSpreadsheet(path: str, wb):
+    # I experienced problem with corrupt .xlsx files, probably when the python process
+    # was interrupted while writing the data.
+    with tempfile.NamedTemporaryFile(suffix='.xlsx', dir=os.path.dirname(path)) as fp:
+        fp.close()
+        wb.save(fp.name)
+        os.rename(fp.name, path) # Atomic move
+
 def enterData(path: str, idColumn: str, idValue: str, dataColumn: str, data: str):
     """
     Enters some data into the spreadsheet stored at path.
@@ -38,4 +49,4 @@ def enterData(path: str, idColumn: str, idValue: str, dataColumn: str, data: str
     if rowIx is None:
         raise ValueError(f'No row found with {idValue} in column {idColumn} at {path}')
     sheet.cell(column=dataColumnIx, row=rowIx, value=data)
-    wb.save(path)
+    saveExcelSpreadsheet(path, wb)

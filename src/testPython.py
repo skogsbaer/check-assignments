@@ -2,9 +2,24 @@ from __future__ import annotations
 from config import *
 from ansi import *
 from ownLogging import *
+import testCommon
 import sys
 
 def runPythonTests(ctx, studentDir: str, assignment: Assignment):
+    with shell.workingDir(studentDir):
+        result = testCommon.runTestScriptIfExisting(assignment, 'instructor', captureStdout=False,
+                                                    stderrToStdout=False)
+    if result is None:
+        result = _runPythonTests(ctx, studentDir, assignment)
+    if result.exitcode == 0:
+        print(green(f'Tests for {assignment.id} OK'))
+        spreadsheetResult = 1
+    else:
+        print(red(f'Tests for {assignment.id} FAILED, see above'))
+        spreadsheetResult = 0
+    ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', spreadsheetResult)
+
+def _runPythonTests(ctx, studentDir: str, assignment: Assignment):
     cfg = ctx.cfg
     testFiles = assignment.getTestFiles(cfg.testDir)
     if len(testFiles) > 1:
@@ -34,7 +49,4 @@ def runPythonTests(ctx, studentDir: str, assignment: Assignment):
     verbose(f'Running {runArgs}')
     result = shell.run(runArgs, onError='ignore', stderrToStdout=True, captureStdout=tee,
                        env={'PYTHONPATH': f'{wyppDir}/python/site-lib'})
-    if result.exitcode == 0:
-        print(green(f'Tests for {assignment.id} OK'))
-    else:
-        print(red(f'Tests for {assignment.id} FAILED, see above'))
+    return result

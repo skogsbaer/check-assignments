@@ -86,7 +86,7 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
             ctx.failed = not res
         else:
             logFileStud = assignment.studentOutputFile('.')
-            result = _runHaskellTests(assignment.id,
+            result = _runHaskellTests(assignment,
                                       studMain,
                                       withGhciOpts(['stack', 'ghci', studMain], ['-e', 'main']),
                                       logFileStud,
@@ -112,7 +112,7 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
             allOpts = withGhciOpts(
                 ['stack', 'ghci', studMain, testFile, '--flag', f'{pkg}:test-mode'],
                 ['-i' + ctx.cfg.testDir, '-e', f'{modName}.tutorMain'])
-            result = _runHaskellTests(assignment.id, studMain, allOpts, logFileTutor, 'instructor')
+            result = _runHaskellTests(assignment, studMain, allOpts, logFileTutor, 'instructor')
         results[testFile] = result
     if len(results) == 1:
         ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result)
@@ -129,14 +129,24 @@ def ignoreLine(line):
         line.strip() == 'Attempting to load the file anyway.' or \
         line.strip() == 'Configuring GHCi with the following packages:'
 
+magicLine = "__START_TEST__"
+
 def massageTestOutput(out):
+    after = None
     out = out.replace('\r', '\n')
     res = []
     for line in out.split('\n'):
         line = line.rstrip()
+        if after is not None:
+            after.append(line)
+        if line == magicLine:
+            after = []
         if not ignoreLine(line):
             res.append(line)
-    return '\n'.join(res)
+    if after is not None:
+        return after
+    else:
+        return res
 
 def _typecheck(file, cmdList):
     result = shell.run(cmdList, onError='ignore', input=':quit')
@@ -160,14 +170,15 @@ def removeRedundantNewlines(lines):
             result.append(l)
     return '\n'.join(result)
 
-def _runHaskellTests(assignmentId, file, cmdList, logFile, kind: Literal['student', 'instructor']):
-    resultScript = runTestScriptIfExisting(assignmentId, kind)
+def _runHaskellTests(assignment, file, cmdList, logFile, kind: Literal['student', 'instructor']):
+    resultScript = runTestScriptIfExisting(assignment, kind)
     if resultScript is None:
         result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
                            captureStdout=True, stderrToStdout=True)
     else:
         result = resultScript
-    out = massageTestOutput(result.stdout)
+    outLines = massageTestOutput(result.stdout)
+    out = '\n'.join(outLines)
     errMsg = None
     okMsg = None
     resultStr = None
@@ -178,8 +189,7 @@ def _runHaskellTests(assignmentId, file, cmdList, logFile, kind: Literal['studen
         lastCasesLine = None
         cases = None
         failing = None
-        for line in out.split('\n'):
-            line = line.strip()
+        for line in outLines:
             m = haskellTestRe.match(line)
             if m:
                 cases = int(m.group(1))
@@ -217,7 +227,10 @@ def _runHaskellTests(assignmentId, file, cmdList, logFile, kind: Literal['studen
         resultStr = 'run failed'
         utils.writeFile(logFile, out)
     if errMsg:
-        print(result.stdout)
+        if result.exitcode in [0, 1]:
+            print(out)
+        else:
+            print(result.stdout)
         print(red(errMsg))
     elif okMsg:
         print(green(okMsg))

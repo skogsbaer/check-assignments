@@ -29,7 +29,17 @@ def unzip(config):
         zipFile = zipFiles[0]
         sysTempDir = tempfile.gettempdir()
         with tempfile.TemporaryDirectory(dir=sysTempDir) as tmpDir:
-            shell.run(['unzip', zipFile, '-d', tmpDir])
+            rr = shell.run(['unzip', zipFile, '-d', tmpDir], onError='ignore',
+                stderrToStdout=True, captureStdout=True)
+            ok = True
+            if rr.exitcode == 1:
+                if not "appears to use backslashes as path separators" in rr.stdout:
+                    ok = False
+            elif rr.exitcode != 0:
+                ok = False
+            if not ok:
+                warn(f"Unzipping failed for {d}!")
+                continue
             extractedFiles = getExtractedFiles(tmpDir)
             if shell.basename(zipFile) in [shell.basename(f) for f in extractedFiles]:
                 warn(f"Zip-file {zipFile} contains another zip-file with the same name. Cannot continue.")

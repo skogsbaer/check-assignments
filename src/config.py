@@ -80,7 +80,7 @@ class Assignment:
         return self.getAsList('copy')
     def getTestFiles(self, d):
         result = []
-        for x in self.getAsList(Keys.testFiles):
+        for x in self.getAsList(Keys.testFiles) + self.getAsList(Keys.testFile):
             if isinstance(x, dict):
                 for k, v in x.items():
                     testFile = shell.pjoin(d, v)
@@ -115,6 +115,22 @@ class Assignment:
         return shell.pjoin(studentDir, f'OUTPUT_student_{self.id}.txt')
     def outputFile(self, studentDir, suffix=''):
         return shell.pjoin(studentDir, f'OUTPUT_{self.id}{suffix}.txt')
+    @property
+    def timeout(self):
+        defTimeout = 10
+        timeout = getFromDicts(self.dicts, 'timeout', default=defTimeout)
+        if timeout == False:
+            return None
+        elif timeout == True:
+            return defTimeout
+        elif isinstance(timeout, int):
+            return timeout
+        else:
+            raise Exception(f'Invalid type for timeout property of assignment {self.id}: ' \
+                'must be a bool or an int')
+    @property
+    def scriptArgs(self):
+        return self.getAsList("scriptArgs")
 
 def expandVarsInStr(s, vars):
     return string.Template(s).safe_substitute(vars)

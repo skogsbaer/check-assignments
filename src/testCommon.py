@@ -6,15 +6,25 @@ from ansi import *
 
 TestKind = Literal['student', 'instructor']
 
-def runTestScriptIfExisting(assignmentId: int, kind: TestKind):
+# Runs a custom test script. The test script is named
+# "run-student-tests.sh" (for student tests) or "run-tests.sh"
+# (for tutor tests). It must be placed in the toplevel directory.
+# The script gets the assignment ID and the value the scriptArgs
+# property of the assignment from check.yml.
+def runTestScriptIfExisting(assignment: Assignment, kind: TestKind,
+                            captureStdout=True, stderrToStdout=True):
     if kind == 'student':
         script = "../run-student-tests.sh"
     else:
         script = "../run-tests.sh"
     if shell.isFile(script):
         print(blue(f"Running test script {script}"))
-        cmdList = [script, str(assignmentId)]
-        return shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
-                           captureStdout=True, stderrToStdout=True)
+        cmdList = [script, str(assignment.id)]
+        timeout = []
+        if assignment.timeout:
+            timeout = ['timeout', '--signal', 'KILL', str(assignment.timeout)]
+        args = assignment.scriptArgs
+        return shell.run(timeout + cmdList + args, onError='ignore',
+                           captureStdout=captureStdout, stderrToStdout=stderrToStdout)
     else:
         return None
