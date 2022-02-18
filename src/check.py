@@ -7,6 +7,7 @@ import importCmd
 import unzipCmd
 import filenamesCmd
 import jplagCmd
+import fixEncodingCmd
 from ownLogging import *
 from utils import *
 from config import *
@@ -71,6 +72,7 @@ def parseArgs():
     prepareCmd.add_argument('file', metavar='CSV_FILE', type=str, help='A .csv file from moodle')
     export = subparsers.add_parser('export',
                                    help='From rating.xlsx, generate a POINTS.txt file for each student and a single .csv file for uploading in moodle')
+    fixEnc = subparsers.add_parser('fixEncoding', help='Fix encoding of source files.')
     return parser.parse_args()
 
 def main():
@@ -127,6 +129,8 @@ def main():
     elif args.cmd == 'jplag':
         a = jplagCmd.JplagArgs(args.mode)
         jplagCmd.jplag(config, a)
+    elif args.cmd == 'fixEncoding':
+        fixEncodingCmd.fixEncoding(config)
     else:
         warn('Unknown command: ' + args.cmd)
 
