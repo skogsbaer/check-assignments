@@ -76,6 +76,14 @@ def runHaskellTests(ctx, studentDir: str, assignment: Assignment):
     with shell.workingDir(studentDir):
         runHaskellTestsInStudentDir(ctx, studentDir, assignment)
 
+def suffixFromTestfile(assignment: Assignment, testFile: str):
+    (testName, _) = shell.splitExt(shell.basename(testFile))
+    try:
+        suffix = utils.stringAfterLastOccurrenceOf(testName, str(assignment.id) + '_')
+    except ValueError:
+        suffix = testName
+    return suffix
+
 def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
     if ctx.acc is None:
         ctx.acc = []
@@ -124,7 +132,8 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
         ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result)
     else:
         for testFile, result in results.items():
-            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result, testFile=testFile)
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result,
+                part=suffixFromTestfile(testFile))
     if not testFiles:
         print("No tutor's tests defined")
 

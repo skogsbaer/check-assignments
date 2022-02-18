@@ -28,19 +28,18 @@ class Context:
         self.args = args
         self.acc = None
         self.failed = None # None means unknown, True definitive failure and False definitive success
-    def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment, colSuffix: str, result: str, testFile: str = None):
+    def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment, colSuffix: str, result: any, part: str = None):
         (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
-        suffix = ''
-        if testFile:
-            (testName, _) = shell.splitExt(shell.basename(testFile))
-            try:
-                suffix = ' ' + stringAfterLastOccurrenceOf(testName, str(assignment.id) + '_')
-            except ValueError:
-                suffix = ' ' + testName
-        title = f'A{assignment.id} {colSuffix}{suffix}'
+        id = id.strip()
+        resultColTitle = f'A{assignment.id}'
+        if part:
+            resultColTitle = f'{resultColTitle} {part}'
+        if colSuffix:
+            resultColTitle = f'{resultColTitle} {colSuffix}'
         try:
             path = self.cfg.spreadsheetPath
-            spreadsheet.enterData(path, 'ID', f"Teilnehmer/in{id.strip()}", title, result)
+            spreadsheet.enterData(path, 'ID', [f"Teilnehmer/in{id}", id], resultColTitle, result,
+                sheetName=self.cfg.spreadsheetAssignmentResultSheet)
             print(f'Stored test result for {name} ({id}) in {path}')
         except ValueError as e:
             print(f"ERROR storing test result in spreadsheet: {e}")

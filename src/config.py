@@ -205,9 +205,38 @@ class Config:
     def wyppDir(self):
         return self.configDict.get('wypp', None)
 
+    # A spreadsheet can be given as either
+    # - FILEPATH (take the active sheet at FILEPATH)
+    # - FILEPATH -> SHEET (take SHEET at FILEPATH)
+    def getCustomRatingSheet(self):
+        custom = self.configDict.get('rating-sheet', None)
+        if custom:
+            custom = custom.strip()
+            l = custom.split('->')
+            if len(l) <= 1:
+                return (custom, None)
+            elif len(l) == 2:
+                return (l[0].strip(), l[1].strip())
+            else:
+                raise ValueError(f"Invalid sheet specification: {custom}")
+        else:
+            return None
+
     @property
     def spreadsheetPath(self):
-        return shell.pjoin(self.baseDir, 'rating.xlsx')
+        custom = self.getCustomRatingSheet()
+        if custom:
+            return custom[0]
+        else:
+            return shell.pjoin(self.baseDir, 'rating.xlsx')
+
+    @property
+    def spreadsheetAssignmentResultSheet(self):
+        custom = self.getCustomRatingSheet()
+        if custom:
+            return custom[1]
+        else:
+            return None
 
     @property
     def ratingCsvPath(self):
