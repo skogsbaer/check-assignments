@@ -4,6 +4,7 @@ from ownLogging import *
 from dataclasses import dataclass
 from typing import *
 import yaml
+import re
 import utils
 import string
 
@@ -31,6 +32,9 @@ class Keys:
     mainFile = 'main-file'
     testFiles = 'test-files'
     testFile = 'test-file'
+    testFilter = 'test-filter'
+    testFilters = 'test-filters'
+    dirsAreUids = 'dirs-are-uids'
 
 @dataclass
 class Assignment:
@@ -78,22 +82,30 @@ class Assignment:
     @property
     def copyItems(self):
         return self.getAsList('copy')
+
+    def getTestFilters(self):
+        return self._getTestSomething([Keys.testFilter, Keys.testFilters])
+
     def getTestFiles(self, d):
+        return self._getTestSomething([Keys.testFiles, Keys.testFile], lambda v: shell.pjoin(d, v))
+
+    def _getTestSomething(self, keys, mapper=lambda x: x):
         result = []
-        for x in self.getAsList(Keys.testFiles) + self.getAsList(Keys.testFile):
+        for x in [x for k in keys for x in self.getAsList(k)]:
             if isinstance(x, dict):
                 for k, v in x.items():
-                    testFile = shell.pjoin(d, v)
+                    testFile = mapper(v)
                     result.append( (k, testFile) )
             elif isinstance(x, str):
                 try:
                     i = x.index(':')
                     k = x[:i]
-                    v = shell.pjoin(d, x[i+1:])
+                    v = mapper(x[i+1:])
                     result.append( (k, v) )
                 except ValueError:
-                    result.append( (x, shell.pjoin(d, x)) )
+                    result.append( (x, mapper(x)) )
         return result
+
     @property
     def hasTests(self):
         disabled = getFromDicts(self.dicts, 'disable-tests', default=False)
@@ -151,6 +163,8 @@ def expandVars(y, vars):
     else:
         return y
 
+uidRegex = re.compile('^[a-z0-9]+$')
+
 @dataclass
 class Config:
     baseDir: str
@@ -163,21 +177,25 @@ class Config:
         self.configDict = configDict
         self.testDir = testDir
         self.baseDir = baseDir
-        self.submissionDirSuffix = '_assignsubmission_file_'
-        self.submissionDirGlob = '*' + self.submissionDirSuffix
-        self.submissionDirTextGlob = '*_assignsubmission_onlinetext_'
         self.feedbackZip = 'feedback.zip'
         self.lang = 'de'
 
     @staticmethod
     def parse(baseDir, configDict, ymlDict):
+        ymlDict.update(configDict)
         ymlDict = expandVars(ymlDict, ymlDict)
         assignments= []
         for k, v in ymlDict['assignments'].items():
             a = Assignment.parse(k, [v, ymlDict])
             assignments.append(a)
         testDir = ymlDict.get('test-dir', shell.pjoin(baseDir, 'tests'))
-        return Config(baseDir, configDict, assignments, testDir)
+        return Config(baseDir, ymlDict, assignments, testDir)
+
+    def isSubmissionDir(self, x):
+        if self.configDict.get(Keys.dirsAreUids, False):
+            return not not uidRegex.match(x)
+        else:
+            return x.endswith('_assignsubmission_file_')
 
     @property
     def gradlePath(self):
@@ -224,6 +242,13 @@ class Config:
                 d[a.kind] = [a]
         return d
 
+    def studentCodedir(self, studentDir):
+        sub = self.configDict.get('student-codedir', None)
+        if sub:
+            return shell.pjoin(studentDir, sub)
+        else:
+            return studentDir
+
 def mkConfig(baseDir, configDict):
     if not shell.isdir(baseDir):
         abort('Base directory {baseDir} does not exist')
@@ -232,4 +257,6 @@ def mkConfig(baseDir, configDict):
         abort(f'Config file {yamlPath} not found')
     s = utils.readFile(yamlPath)
     ymlDict = yaml.load(s, Loader=yaml.FullLoader)
-    return Config.parse(baseDir, configDict, ymlDict)
+    cfg = Config.parse(baseDir, configDict, ymlDict)
+    verbose(f"Parsed config: {cfg}")
+    return cfg

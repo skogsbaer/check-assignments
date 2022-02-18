@@ -129,7 +129,7 @@ def export(cfg):
     print(f'Wrote {ratingCsv}')
     # write .zip file feedback
     with shell.workingDir(cfg.baseDir):
-        allDirs = collectSubmissionDirs(cfg, baseDir='.', includeBoth=True)
+        allDirs = collectSubmissionDirs(cfg, baseDir='.')
         shell.removeFile(cfg.feedbackZip)
         # shell.run(['zip', '-q', '-r', cfg.feedbackZip] + allDirs + ['-x', '*/TUTOR/*'])
         zipDirs(cfg.feedbackZip, allDirs, excludeDirs=['.stack-work'])

@@ -167,6 +167,7 @@ def runTests(cfg, args):
     if not dirs:
         dirs = collectSubmissionDirs(cfg)
     dirs = sorted(dirs)
+    verbose(f"Submission directories: {dirs}")
     if args.startAt:
         l = dirs
         dirs = []

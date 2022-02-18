@@ -18,7 +18,9 @@ def abort(msg):
 
 def assertExists(path):
     if not shell.isFile(path):
-        abort(f'File {path} does not exist')
+        d = shell.dirname(path)
+        files = shell.ls(d, '*')
+        abort(f'File {path} does not exist, existing files: {files}')
 
 def assertFileNotEmpty(path):
     assertExists(path)

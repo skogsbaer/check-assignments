@@ -27,7 +27,7 @@ def fixStudentCode(f):
     Add "module Main where", remove old module line if existing.
     Returns the filename of the rewritten file (if necessary).
     """
-    if not shell.isFile(f):
+    if not f or not shell.isFile(f):
         return f
     newLines = []
     foundWeirdModLine = False
@@ -52,6 +52,8 @@ def findModuleName(f):
     """
     Extracts the module name from the given file.
     """
+    if not shell.isFile(f):
+        return None
     for l in open(f).readlines():
         m = moduleRe.match(l)
         if m:
@@ -86,9 +88,13 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
             ctx.failed = not res
         else:
             logFileStud = assignment.studentOutputFile('.')
+            if studMain:
+                args = withGhciOpts(['stack', 'ghci', studMain], ['-e', 'main'])
+            else:
+                args = None
             result = _runHaskellTests(assignment,
                                       studMain,
-                                      withGhciOpts(['stack', 'ghci', studMain], ['-e', 'main']),
+                                      args,
                                       logFileStud,
                                       'student')
             ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Stud Tests', result)
@@ -106,12 +112,12 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
             logFileSuffix = f'_{testId}'
         logFileTutor = assignment.outputFile('.', suffix=logFileSuffix)
         modName = findModuleName(testFile)
-        if modName is None:
-            print(red('No module name found in tutor test code. Cannot run tests!'))
-        else:
+        if studMain and modName:
             allOpts = withGhciOpts(
                 ['stack', 'ghci', studMain, testFile, '--flag', f'{pkg}:test-mode'],
                 ['-i' + ctx.cfg.testDir, '-e', f'{modName}.tutorMain'])
+        else:
+            allOpts = None
             result = _runHaskellTests(assignment, studMain, allOpts, logFileTutor, 'instructor')
         results[testFile] = result
     if len(results) == 1:
@@ -173,8 +179,12 @@ def removeRedundantNewlines(lines):
 def _runHaskellTests(assignment, file, cmdList, logFile, kind: Literal['student', 'instructor']):
     resultScript = runTestScriptIfExisting(assignment, kind)
     if resultScript is None:
-        result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
-                           captureStdout=True, stderrToStdout=True)
+        if cmdList is not None:
+            result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
+                               captureStdout=True, stderrToStdout=True)
+        else:
+            print(f'No way to run {kind} tests')
+            return
     else:
         result = resultScript
     outLines = massageTestOutput(result.stdout)
@@ -204,8 +214,16 @@ def _runHaskellTests(assignment, file, cmdList, logFile, kind: Literal['student'
             logLines.append(lastCasesLine)
         utils.writeFile(logFile, removeRedundantNewlines(logLines))
         if cases is None:
-            errMsg = f'No test output found for {file}'
-            resultStr = 'no test output'
+            if resultScript is not None:
+                if resultScript.exitcode == 0:
+                    resultStr = 1.0
+                    okMsg = f'Test script executed succesfully'
+                else:
+                    errMsg = f"Test script returned exit code {resultScript.exitcode}"
+                    resultStr = 0.0
+            else:
+                errMsg = f'No test output found for {file}'
+                resultStr = 'no test output'
         elif failing:
             errMsg = f'{failing} failing tests for {file}'
             resultStr = round(1 - failing/cases, 2)

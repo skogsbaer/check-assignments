@@ -14,17 +14,19 @@ TestKind = Literal['student', 'instructor']
 def runTestScriptIfExisting(assignment: Assignment, kind: TestKind,
                             captureStdout=True, stderrToStdout=True):
     if kind == 'student':
-        script = "../run-student-tests.sh"
+        scriptBase = "../run-student-tests"
     else:
-        script = "../run-tests.sh"
-    if shell.isFile(script):
-        print(blue(f"Running test script {script}"))
-        cmdList = [script, str(assignment.id)]
-        timeout = []
-        if assignment.timeout:
-            timeout = ['timeout', '--signal', 'KILL', str(assignment.timeout)]
-        args = assignment.scriptArgs
-        return shell.run(timeout + cmdList + args, onError='ignore',
-                           captureStdout=captureStdout, stderrToStdout=stderrToStdout)
-    else:
-        return None
+        scriptBase = "../run-tests"
+    exts = [".sh", ".py", ""]
+    for e in exts:
+        script = scriptBase + e
+        if shell.isFile(script):
+            print(blue(f"Running test script {script}"))
+            cmdList = [script, str(assignment.id)]
+            timeout = []
+            if assignment.timeout:
+                timeout = ['timeout', '--signal', 'KILL', str(assignment.timeout)]
+            args = assignment.scriptArgs
+            return shell.run(timeout + cmdList + args, onError='ignore',
+                               captureStdout=captureStdout, stderrToStdout=stderrToStdout)
+    return None

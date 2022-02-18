@@ -18,14 +18,13 @@ def writeBinaryFile(name, content):
     with open(name, 'wb') as f:
         f.write(content)
 
-def collectSubmissionDirs(config, baseDir=None, includeBoth=False):
+def collectSubmissionDirs(config, baseDir=None):
     if baseDir is None:
         baseDir = config.baseDir
-    dirs1 = shell.ls(baseDir, config.submissionDirGlob)
-    dirs2 = []
-    if includeBoth:
-        dirs2 = shell.ls(config.baseDir, config.submissionDirTextGlob)
-    result = [d for d in dirs1 + dirs2 if shell.isdir(d)]
+    result = []
+    for x in shell.ls(baseDir, '*'):
+        if shell.isDir(x) and config.isSubmissionDir(shell.basename(x)):
+            result.append(x)
     return sorted(result)
 
 def collectSubmissionFiles(config, d):
@@ -49,24 +48,23 @@ def findSubmissionDirForId(config, x):
     return dirs[0]
 
 def parseSubmissionDir(cfg, d):
+    """
+    Returns a pair (name, id) where id is either the loginname or the matrikel of the student.
+    """
     x = shell.basename(d)
     if not x:
         x = d
     x = stripLeadingSlash(x)
     x = stripTrailingSlash(x)
-    suf = cfg.submissionDirSuffix
-    if x.endswith(suf):
-        x = x[:-len(suf)]
-    try:
-        i = x.rindex('_')
-    except ValueError:
+    if not cfg.isSubmissionDir(x):
         raise ValueError(f'Invalid submission directory: {x}')
-    if i > 0 and i < len(x) - 1:
-        name = x[:i]
-        matrikel = x[i+1:]
-        return (name, matrikel)
+    comps = x.split('_')
+    if len(comps) == 0:
+        raise ValueError(f'Invalid submission directory: {x}')
+    elif len(comps) == 1:
+        return (x, x)
     else:
-        raise ValueError(f'Invalid submission directory: {x}')
+        return (comps[0], comps[1])
 
 def stripSlashes(x):
     if not x:

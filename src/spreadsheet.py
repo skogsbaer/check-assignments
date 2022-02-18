@@ -24,7 +24,7 @@ def enterData(path: str, idColumn: str, idValue: str, dataColumn: str, data: str
     dataColumnIx = None
     for col in range(1, sheet.max_column + 1):
         cell = sheet.cell(column=col, row=1)
-        if cell:
+        if cell and cell.value:
             v = cell.value.strip()
             if v == idColumn:
                 if idColumnIx is not None:
