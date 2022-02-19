@@ -105,7 +105,7 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
                                       args,
                                       logFileStud,
                                       'student')
-            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Stud Tests', result)
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'ST', result)
         ctx.acc = ctx.acc + [studMain]
     else:
         print(f"Students tests in {studMain} already run.")
@@ -126,13 +126,13 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
                 ['-i' + ctx.cfg.testDir, '-e', f'{modName}.tutorMain'])
         else:
             allOpts = None
-            result = _runHaskellTests(assignment, studMain, allOpts, logFileTutor, 'instructor')
+        result = _runHaskellTests(assignment, studMain, allOpts, logFileTutor, 'instructor')
         results[testFile] = result
     if len(results) == 1:
-        ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result)
+        ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'TT', result)
     else:
         for testFile, result in results.items():
-            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', result,
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'TT', result,
                 part=suffixFromTestfile(testFile))
     if not testFiles:
         print("No tutor's tests defined")

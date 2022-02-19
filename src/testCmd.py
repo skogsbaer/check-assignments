@@ -29,6 +29,10 @@ class Context:
         self.acc = None
         self.failed = None # None means unknown, True definitive failure and False definitive success
     def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment, colSuffix: str, result: any, part: str = None):
+        path = self.cfg.spreadsheetPath
+        if not shell.isFile(path):
+            print(red(f'No spreadsheet at {path}, continuing without storing results'))
+            return
         (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
         id = id.strip()
         resultColTitle = f'A{assignment.id}'
@@ -37,7 +41,6 @@ class Context:
         if colSuffix:
             resultColTitle = f'{resultColTitle} {colSuffix}'
         try:
-            path = self.cfg.spreadsheetPath
             spreadsheet.enterData(path, 'ID', [f"Teilnehmer/in{id}", id], resultColTitle, result,
                 sheetName=self.cfg.spreadsheetAssignmentResultSheet)
             print(f'Stored test result for {name} ({id}) in {path}')

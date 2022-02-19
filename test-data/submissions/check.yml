@@ -1,3 +1,6 @@
+copy:
+  - stack.yaml
+  - package.yaml
 assignments:
   1:
     points: 4
@@ -12,3 +15,8 @@ assignments:
     points: 4
     kind: java
     disable-tests: true
+  4:
+    points: 3
+    kind: haskell
+    main-file: "ex04/Assignment_04.hs"
+    test-file: "Test_04.hs"

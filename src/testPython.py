@@ -17,7 +17,7 @@ def runPythonTests(ctx, studentDir: str, assignment: Assignment):
     else:
         print(red(f'Tests for {assignment.id} FAILED, see above'))
         spreadsheetResult = 0
-    ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'Tutor Tests', spreadsheetResult)
+    ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'TT', spreadsheetResult)
 
 def _runPythonTests(ctx, studentDir: str, assignment: Assignment):
     cfg = ctx.cfg
