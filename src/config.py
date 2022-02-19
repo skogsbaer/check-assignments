@@ -55,7 +55,8 @@ class Keys:
     testFilter = 'test-filter'
     testFilters = 'test-filters'
 
-defaultTestDir = 'tests'
+def defaultTestDir(baseDir):
+    return shell.pjoin(baseDir, 'tests')
 
 @dataclass
 class Test:
@@ -63,9 +64,10 @@ class Test:
     dir: str
     _filter: Optional[str]
     _file: Optional[str]
+
     @staticmethod
-    def parse(assignmentId: int, id: Optional[str], dicts: list[dict], fail: bool = True):
-        dir = getFromDicts(dicts, 'dir', prefix="test-", default=defaultTestDir)
+    def parse(baseDir, assignmentId: int, id: Optional[str], dicts: list[dict], fail: bool = True):
+        dir = getFromDicts(dicts, 'dir', prefix="test-", default=defaultTestDir(baseDir))
         file = getFromDicts(dicts, 'file', fail=False, prefix="test-")
         if file:
             file = shell.pjoin(dir, file)
@@ -79,8 +81,6 @@ class Test:
                 raise ValueError(f"Invalid {testName} without file and without filter")
             else:
                 return None
-        if file:
-            file = shell.pjoin(dir, file)
         return Test(testId, dir, filter, file)
 
     def outputFile(self, studentDir):
@@ -133,14 +133,14 @@ class Assignment:
         if type(self.id) != int:
             raise TypeError("Assignment.id must be an int")
     @staticmethod
-    def parse(id, dicts):
+    def parse(baseDir, id, dicts):
         points = getFromDicts(dicts, Keys.points, int)
         kind = getFromDicts(dicts, Keys.kind)
         tests = getFromDicts(dicts, Keys.tests, default={}, fail=False)
         if not tests:
             files = getSingularPlural(dicts, Keys.testFile, Keys.testFiles)
             filters = getSingularPlural(dicts, Keys.testFilter, Keys.testFilters)
-            dir = getFromDicts(dicts, Keys.testDir, default=defaultTestDir)
+            dir = getFromDicts(dicts, Keys.testDir, default=defaultTestDir(baseDir))
             parsedTests = []
             for f in files:
                 testId = str(id)
@@ -155,7 +155,7 @@ class Assignment:
         else:
             parsedTests = []
             for k, v in tests.items():
-                t = Test.parse(id, k, [v] + dicts)
+                t = Test.parse(baseDir, id, k, [v] + dicts)
                 parsedTests.append(t)
         disabledTests = getFromDicts(dicts, 'disable-tests', default=False)
         if disabledTests:
@@ -231,7 +231,7 @@ class Config:
         ymlDict = expandVars(ymlDict, ymlDict)
         assignments= []
         for k, v in ymlDict['assignments'].items():
-            a = Assignment.parse(k, [v, ymlDict])
+            a = Assignment.parse(baseDir, k, [v, ymlDict])
             assignments.append(a)
         return Config(baseDir, ymlDict, assignments)
 

@@ -105,37 +105,29 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
                                       args,
                                       logFileStud,
                                       'student')
-            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'ST', result)
+            ctx.storeTestResultInSpreadsheet(studentDir, str(assignment.id), 'ST', result)
         ctx.acc = ctx.acc + [studMain]
     else:
         print(f"Students tests in {studMain} already run.")
     if sanityCheck:
         return
-    testFiles = assignment.getTestFiles(ctx.cfg.testDir)
-    results = {}
-    for testId, testFile in testFiles:
+    if not assignment.tests:
+        print("No tutor's tests defined")
+    for t in assignment.tests:
+        testFile = t.file
         print(f"Running tutor's tests in {testFile}")
-        logFileSuffix = ''
-        if len(testFiles) > 1:
-            logFileSuffix = f'_{testId}'
-        logFileTutor = assignment.outputFile('.', suffix=logFileSuffix)
+        logFileTutor = t.outputFile('.')
         modName = findModuleName(testFile)
+        print(studMain)
         if studMain and modName:
             allOpts = withGhciOpts(
                 ['stack', 'ghci', studMain, testFile, '--flag', f'{pkg}:test-mode'],
-                ['-i' + ctx.cfg.testDir, '-e', f'{modName}.tutorMain'])
+                ['-i' + t.dir, '-e', f'{modName}.tutorMain'])
         else:
             allOpts = None
         result = _runHaskellTests(assignment, studMain, allOpts, logFileTutor, 'instructor')
-        results[testFile] = result
-    if len(results) == 1:
-        ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'TT', result)
-    else:
-        for testFile, result in results.items():
-            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'TT', result,
-                part=suffixFromTestfile(testFile))
-    if not testFiles:
-        print("No tutor's tests defined")
+        if result is not None:
+            ctx.storeTestResultInSpreadsheet(studentDir, t.id, 'TT', result)
 
 haskellTestRe = re.compile(r'^Cases:\s*(\d+)\s*Tried:\s*(\d+)\s*Errors:\s*(\d+)\s*Failures:\s*(\d+)')
 
@@ -192,7 +184,7 @@ def _runHaskellTests(assignment, file, cmdList, logFile, kind: Literal['student'
             result = shell.run(['timeout', '--signal', 'KILL', '10'] + cmdList, onError='ignore',
                                captureStdout=True, stderrToStdout=True)
         else:
-            print(f'No way to run {kind} tests')
+            print(red(f'No way to run {kind} tests'))
             return
     else:
         result = resultScript

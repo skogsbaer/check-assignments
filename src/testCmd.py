@@ -44,7 +44,7 @@ class Context:
         try:
             spreadsheet.enterData(path, 'ID', [f"Teilnehmer/in{id}", id], resultColTitle, result,
                 sheetName=self.cfg.spreadsheetAssignmentResultSheet)
-            print(f'Stored test result for {name} ({id}) in {path}')
+            print(f'Stored test result "{result}" for "{name}" ({id}) in column "{resultColTitle}" at {path}')
         except ValueError as e:
             print(f"ERROR storing test result in spreadsheet: {e}")
 
