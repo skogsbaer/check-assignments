@@ -23,6 +23,12 @@ def assertExists(path):
         files = shell.ls(d, '*')
         abort(f'File {path} does not exist, existing files: {files}')
 
+def assertFileContains(path, s):
+    assertExists(path)
+    content = shell.readFile(path)
+    if not s in content:
+        abort(f'File {path} does not contain "{s}"')
+
 def assertFileNotEmpty(path):
     assertExists(path)
     s = shell.readBinaryFile(path,)
@@ -56,11 +62,21 @@ with shell.tempDir(onException=False) as tmp:
         assertExists(barFoo + 'COMMENTS.txt')
 
         print('### tests ###')
-        shell.run([checkAssignments, 'runTests', '--interactive'], input='c\nc\nc\n')
+        logFile = shell.pjoin(tmp, "log.txt")
+        shell.run(f'{checkAssignments} runTests --interactive | tee {logFile}', input='c\nc\nc\n')
         assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_1.txt'))
         assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_2.txt'))
         assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_3.txt'))
-        assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_4.txt'))
+        assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_4_A.txt'))
+        assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_student_4.txt'))
+
+        assertFileContains(logFile, "Test 1 FAILED")
+        assertFileContains(logFile, "AssertionError: 41 != 42")
+        assertFileContains(logFile, "Test 2 FAILED")
+        assertFileContains(logFile, "expected: <1> but was: <0>")
+        assertFileContains(logFile, "Test 3 OK")
+        assertFileContains(logFile, "1 failing tests for ./ex04/Assignment_04.hs")
+        assertFileContains(logFile, "expected: 5\n but got: 4")
 
         print()
         print('NOTE: the first test (python) should fail with "AssertionError: 41 != 42"')
@@ -73,11 +89,11 @@ with shell.tempDir(onException=False) as tmp:
         rows = list(ws.rows)
         titleRow = [c.value for c in rows[0]]
         try:
-            ix = titleRow.index('A1 TT')
+            ix = titleRow.index('1 TT')
         except ValueError:
-            abort('Column "A1 TT" not found in rating.xlsx')
+            abort('Column "1 TT" not found in rating.xlsx')
         valueRow = [c.value for c in rows[1]]
-        expected = [('A1 TT', 0), ('A2 C', 1), ('A2 T', 0), ('A3 C', 1), ('A3 T', -1), ('A4 ST', 1), ('A4 TT', 0)]
+        expected = [('1 TT', 0), ('2 C', 1), ('2 T', 0), ('3 C', 1), ('3 T', -1), ('4 ST', 1), ('4_A TT', 0)]
         end = ix + len(expected) + 1
         titles = titleRow[ix:end]
         values = valueRow[ix:end]

@@ -63,9 +63,9 @@ def _runJavaTest(ctx, studentDir: str, testId: str, testDir: str, filter: Option
         result = shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=tee)
         output = open(logFileName, 'r').read()
     if result.exitcode == 0:
-        print(green(f'Tests for {testId} OK'))
+        print(green(f'Test {testId} OK'))
     else:
-        print(red(f'Tests for {testId} FAILED, see above'))
+        print(red(f'Test {testId} FAILED, see above'))
     result = Result.parseResult(output)
     ctx.storeTestResultInSpreadsheet(studentDir, testId, ['C'],
         0 if result.compileError else 1)

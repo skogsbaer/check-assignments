@@ -46,9 +46,9 @@ def _runPythonTest(ctx, studentDir: str, testId: str, testKind: TestKind,
     result = shell.run(runArgs, onError='ignore', stderrToStdout=True, captureStdout=tee,
                        env={'PYTHONPATH': f'{wyppDir}/python/site-lib'})
     if result.exitcode == 0:
-        print(green(f'Tests {testId} OK'))
+        print(green(f'Test {testId} OK'))
         spreadsheetResult = 1
     else:
-        print(red(f'Tests {testId} FAILED, see above'))
+        print(red(f'Test {testId} FAILED, see above'))
         spreadsheetResult = 0
     ctx.storeTestResultInSpreadsheet(studentDir, testId, [testKind], spreadsheetResult)
