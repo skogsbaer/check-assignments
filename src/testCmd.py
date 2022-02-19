@@ -13,6 +13,7 @@ import testPython
 import testJava
 import utils
 import spreadsheet
+from testCommon import *
 
 @dataclass
 class TestArgs:
@@ -28,18 +29,16 @@ class Context:
         self.args = args
         self.acc = None
         self.failed = None # None means unknown, True definitive failure and False definitive success
-    def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment, colSuffix: str, result: any, part: str = None):
+    def storeTestResultInSpreadsheet(self, studentDir: str, testId: str, testKind: Optional[TestKind], result: any):
         path = self.cfg.spreadsheetPath
         if not shell.isFile(path):
             print(red(f'No spreadsheet at {path}, continuing without storing results'))
             return
         (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
         id = id.strip()
-        resultColTitle = f'A{assignment.id}'
-        if part:
-            resultColTitle = f'{resultColTitle} {part}'
-        if colSuffix:
-            resultColTitle = f'{resultColTitle} {colSuffix}'
+        resultColTitle = testId
+        if testKind:
+            resultColTitle = f'{resultColTitle} {testKind}'
         try:
             spreadsheet.enterData(path, 'ID', [f"Teilnehmer/in{id}", id], resultColTitle, result,
                 sheetName=self.cfg.spreadsheetAssignmentResultSheet)

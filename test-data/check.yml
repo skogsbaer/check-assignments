@@ -10,15 +10,24 @@ assignments:
   1:
     points: 13
     main-file: ex01/Files.hs
-    test-files:
-    - a:TutorTests04_01_a.hs
-    - b: TutorTests04_01_b.hs
+    tests:
+      a:
+        file: TutorTests04_01_a.hs
+      b:
+        file: TutorTests04_01_b.hs
   2:
     points: 23
     main-file: ex02/ticTacToe.hs
     test-files:
     - TutorTests04_02_a.hs
     - TutorTests04_02_b.hs
-    - TutorTests04_02_c.hs
-    - TutorTests04_02_d.hs
-    - TutorTests04_02_g.hs
+  3:
+    points: 4
+    main-file: ex03/Foo.hs
+    test-file: "TutorTest_03.hs"
+  4:
+    points: 3
+    test-dir: "subdir"
+    test-filter:
+    - "pkg.*"
+    - "pkg2.*"

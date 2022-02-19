@@ -8,14 +8,19 @@ import re
 import utils
 import string
 
-def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True):
+def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True, prefix=''):
     if type(dicts) is not list:
         dicts = [dicts]
     val = None
-    for d in dicts:
+    for i, d in enumerate(dicts):
         if k in d:
             val = d[k]
             break
+        if i == 0:
+            k = prefix + k
+            if k in d:
+                val = d[k]
+                break
     else:
         val = default
     if val is None:
@@ -40,20 +45,31 @@ def getAsList(dicts, k):
 class Keys:
     dirsAreUids = 'dirs-are-uids'
     tests = 'tests'
+    points = 'points'
+    kind = 'kind'
+    mainFile = 'main-file'
+    timeout = 'timeout'
+    testDir = 'test-dir'
+    testFile = 'test-file'
+    testFiles = 'test-files'
+    testFilter = 'test-filter'
+    testFilters = 'test-filters'
+
+defaultTestDir = 'tests'
 
 @dataclass
 class Test:
     id: str
     dir: str
-    filter: str
-    file: str
+    _filter: Optional[str]
+    _file: Optional[str]
     @staticmethod
     def parse(assignmentId: int, id: Optional[str], dicts: list[dict], fail: bool = True):
-        dir = getFromDicts(dicts, 'dir')
-        file = getFromDicts(dicts, 'file', false=False)
+        dir = getFromDicts(dicts, 'dir', prefix="test-", default=defaultTestDir)
+        file = getFromDicts(dicts, 'file', fail=False, prefix="test-")
         if file:
             file = shell.pjoin(dir, file)
-        filter = getFromDicts(dicts, 'filter', false=False)
+        filter = getFromDicts(dicts, 'filter', fail=False, prefix="test-")
         testId = str(assignmentId)
         if id:
             testId = f'{testId}_{id}'
@@ -66,12 +82,28 @@ class Test:
         if file:
             file = shell.pjoin(dir, file)
         return Test(testId, dir, filter, file)
+
     def outputFile(self, studentDir):
         return shell.pjoin(studentDir, f'OUTPUT_{self.id}.txt')
+
+    @property
+    def file(self):
+        x = self._file
+        if x is None:
+            raise ValueError(f'Test {self.id} has no file')
+        return x
+
+    @property
+    def filter(self):
+        x = self._filter
+        if x is None:
+            raise ValueError(f'Test {self.id} has no filter')
+        return x
+
     @property
     def timeout(self):
         defTimeout = 10
-        timeout = getFromDicts(self.dicts, 'timeout', default=defTimeout)
+        timeout = getFromDicts(self.dicts, Keys.timeout, default=defTimeout)
         if timeout == False:
             return None
         elif timeout == True:
@@ -85,6 +117,10 @@ class Test:
     def scriptArgs(self):
         return getAsList(self.dicts, "scriptArgs")
 
+def getSingularPlural(dicts, kSing, kPlur):
+    xs = getAsList(dicts, kSing)
+    ys = getAsList(dicts, kPlur)
+    return xs + ys
 
 @dataclass
 class Assignment:
@@ -98,24 +134,33 @@ class Assignment:
             raise TypeError("Assignment.id must be an int")
     @staticmethod
     def parse(id, dicts):
-        points = getFromDicts(dicts, 'points', int)
-        kind = getFromDicts(dicts, 'kind')
-        tests = getFromDicts(dicts, Keys.test, default={}, fail=False)
+        points = getFromDicts(dicts, Keys.points, int)
+        kind = getFromDicts(dicts, Keys.kind)
+        tests = getFromDicts(dicts, Keys.tests, default={}, fail=False)
         if not tests:
-            t = Test.parse(id, None, dicts, fail=False)
-            if t:
-                parsedTests = [t]
-            else:
-                parsedTests = []
+            files = getSingularPlural(dicts, Keys.testFile, Keys.testFiles)
+            filters = getSingularPlural(dicts, Keys.testFilter, Keys.testFilters)
+            dir = getFromDicts(dicts, Keys.testDir, default=defaultTestDir)
+            parsedTests = []
+            for f in files:
+                testId = str(id)
+                if len(files) + len(filters) > 1:
+                    testId = f'{testId}_{shell.removeExt(shell.basename(f))}'
+                parsedTests.append(Test(testId, dir, None, shell.pjoin(dir, f)))
+            for f in filters:
+                testId = str(id)
+                if len(files) + len(filters) > 1:
+                    testId = f'{testId}_{f.replace("*", "ALL")}'
+                parsedTests.append(Test(testId, dir, f, None))
         else:
             parsedTests = []
-            for k, v in tests:
+            for k, v in tests.items():
                 t = Test.parse(id, k, [v] + dicts)
                 parsedTests.append(t)
         return Assignment(id, points, kind, parsedTests, dicts)
     @property
     def itemsToCopy(self):
-        return self.getAsList('copy')
+        return getAsList(self.dicts, 'copy')
     def studentOutputFile(self, studentDir):
         return shell.pjoin(studentDir, f'OUTPUT_student_{str(self.id)}.txt')
     def getMainFile(self, d, fail=False):
@@ -285,6 +330,9 @@ def mkConfig(baseDir, configDict):
     if not shell.isFile(yamlPath):
         abort(f'Config file {yamlPath} not found')
     s = utils.readFile(yamlPath)
+    return mkConfigFromString(baseDir, configDict, s)
+
+def mkConfigFromString(baseDir, configDict, s):
     ymlDict = yaml.load(s, Loader=yaml.FullLoader)
     cfg = Config.parse(baseDir, configDict, ymlDict)
     verbose(f"Parsed config: {cfg}")

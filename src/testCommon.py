@@ -4,7 +4,9 @@ from config import Assignment
 from typing import Literal
 from ansi import *
 
-TestKind = Literal['student', 'instructor']
+testKindStudent = 'ST'
+testKindTutor = 'TT'
+TestKind = Literal['ST', 'TT']
 
 # Runs a custom test script. The test script is named
 # "run-student-tests.sh" (for student tests) or "run-tests.sh"
@@ -13,7 +15,7 @@ TestKind = Literal['student', 'instructor']
 # property of the assignment from check.yml.
 def runTestScriptIfExisting(assignment: Assignment, kind: TestKind,
                             captureStdout=True, stderrToStdout=True):
-    if kind == 'student':
+    if kind == testKindStudent:
         scriptBase = "../run-student-tests"
     else:
         scriptBase = "../run-tests"

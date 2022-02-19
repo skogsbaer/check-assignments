@@ -19,4 +19,6 @@ assignments:
     points: 3
     kind: haskell
     main-file: "ex04/Assignment_04.hs"
-    test-file: "Test_04.hs"
+    tests:
+      A:
+        file: "Test_04.hs"
