@@ -1,0 +1,43 @@
+name:         test
+version:      0.1
+synopsis:     test
+license:      BSD3
+
+dependencies:
+  - base
+  - HUnit
+  - text
+  - directory
+
+when:
+- condition: flag(test-mode)
+  then:
+    dependencies:
+      - template-haskell
+      - haskell-src-meta
+      - filepath
+      - bytestring
+      - directory
+      - main-tester
+  else:
+    dependencies: []
+
+tests:
+  ex04:
+    main: Assignment_04.hs
+    source-dirs: ex04
+
+ghc-options:
+  - -Werror -W -fwarn-unused-imports -fwarn-unused-binds -fwarn-orphans
+  - -fwarn-unused-matches -fwarn-unused-do-bind -fwarn-wrong-do-bind
+  - -fwarn-missing-signatures -fno-warn-partial-type-signatures
+  - -Wredundant-constraints
+
+default-extensions:
+  - ScopedTypeVariables
+
+flags:
+  test-mode:
+    description: "By default, do not run instructor tests"
+    manual: true
+    default: false

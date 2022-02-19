@@ -35,7 +35,7 @@ def runJavaTests(ctx, studentDir: str, assignment: Assignment):
         allFilters = [('', '*')]
     allTestDirs = assignment.getTestDirs()
     if not allTestDirs:
-        allTestDirs = [cfg.testDir]
+        allTestDirs = [('', cfg.testDir)]
     for testDirId, testDir in allTestDirs:
         for filterId, filter in allFilters:
             testId = str(assignment.id)
