@@ -51,4 +51,4 @@ def _runPythonTest(ctx, studentDir: str, testId: str, testKind: TestKind,
     else:
         print(red(f'Tests {testId} FAILED, see above'))
         spreadsheetResult = 0
-    ctx.storeTestResultInSpreadsheet(studentDir, testId, testKind, spreadsheetResult)
+    ctx.storeTestResultInSpreadsheet(studentDir, testId, [testKind], spreadsheetResult)

@@ -6,6 +6,7 @@ from ownLogging import *
 from config import Config, Assignment
 from dataclasses import dataclass
 import re
+from typing import *
 
 testPassRegex = re.compile('> .* PASSED')
 testFailRegex = re.compile('> .* FAIL')
@@ -29,32 +30,15 @@ class Result:
         return Result(compileError, nPass + nFail, nFail)
 
 def runJavaTests(ctx, studentDir: str, assignment: Assignment):
-    cfg = ctx.cfg
-    allFilters = assignment.getTestFilters()
-    if not allFilters:
-        allFilters = [('', '*')]
-    allTestDirs = assignment.getTestDirs()
-    if not allTestDirs:
-        allTestDirs = [('', cfg.testDir)]
-    for testDirId, testDir in allTestDirs:
-        for filterId, filter in allFilters:
-            testId = str(assignment.id)
-            parts = []
-            if len(allTestDirs) > 1 and testDirId:
-                testId = f'{testId}_{testDirId}'
-                parts.append(testDirId)
-            if len(allFilters) > 1 and filterId:
-                testId = f'{testId}_{filterId.replace("*", "-")}'
-                parts.append(filterId)
-            result = _runJavaTest(ctx, testDir, studentDir, testId, filter, assignment.hasTests)
-            part = ' '.join(parts)
-            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'C',
-                0 if result.compileError else 1, part=part)
-            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'T', result.ratio(), part=part)
+    for t in assignment.tests:
+        _runJavaTest(ctx, studentDir, t.id, t.dir, t.filter, True)
+    if not assignment.tests:
+        _runJavaTest(ctx, studentDir, str(assignment.id), "NOT_EXISTING_TEST_DIR", None, False)
 
-
-def _runJavaTest(ctx, testDir: str, studentDir: str, testId: str, filter: str, hasTests: bool):
+def _runJavaTest(ctx, studentDir: str, testId: str, testDir: str, filter: Optional[str], hasTests: bool):
     cfg = ctx.cfg
+    if filter is None:
+        filter = '*'
     gradleProps = {
         'testFilter': filter,
         'testDir': testDir,
@@ -82,4 +66,7 @@ def _runJavaTest(ctx, testDir: str, studentDir: str, testId: str, filter: str, h
         print(green(f'Tests for {testId} OK'))
     else:
         print(red(f'Tests for {testId} FAILED, see above'))
-    return Result.parseResult(output)
+    result = Result.parseResult(output)
+    ctx.storeTestResultInSpreadsheet(studentDir, testId, ['C'],
+        0 if result.compileError else 1)
+    ctx.storeTestResultInSpreadsheet(studentDir, testId, ['T'], result.ratio())

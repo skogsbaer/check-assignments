@@ -29,7 +29,9 @@ class Context:
         self.args = args
         self.acc = None
         self.failed = None # None means unknown, True definitive failure and False definitive success
-    def storeTestResultInSpreadsheet(self, studentDir: str, testId: str, testKind: Optional[TestKind], result: any):
+    def storeTestResultInSpreadsheet(self, studentDir: str, testId: str, suffixes: Union[str, list[str]], result: any):
+        if type(suffixes) == str:
+            suffixes = [suffixes]
         path = self.cfg.spreadsheetPath
         if not shell.isFile(path):
             print(red(f'No spreadsheet at {path}, continuing without storing results'))
@@ -37,8 +39,8 @@ class Context:
         (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
         id = id.strip()
         resultColTitle = testId
-        if testKind:
-            resultColTitle = f'{resultColTitle} {testKind}'
+        if suffixes:
+            resultColTitle = f'{resultColTitle} {" ".join(suffixes)}'
         try:
             spreadsheet.enterData(path, 'ID', [f"Teilnehmer/in{id}", id], resultColTitle, result,
                 sheetName=self.cfg.spreadsheetAssignmentResultSheet)

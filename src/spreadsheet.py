@@ -83,6 +83,6 @@ def enterData(path: str,
                 rowIx = row
     if rowIx is None:
         raise ValueError(f'No row found with value {idValue} in column {idColumn} at {path}')
-    verbose(f'Storing {data} at column={dataColumnIx}, row={rowIx} in {path}/{sheetName}')
+    verbose(f'Storing {data} at column={dataColumnIx}, row={rowIx} in {path} (sheet: {sheetName})')
     sheet.cell(column=dataColumnIx, row=rowIx, value=data)
     saveExcelSpreadsheet(path, wb)

@@ -157,6 +157,9 @@ class Assignment:
             for k, v in tests.items():
                 t = Test.parse(id, k, [v] + dicts)
                 parsedTests.append(t)
+        disabledTests = getFromDicts(dicts, 'disable-tests', default=False)
+        if disabledTests:
+            parsedTests = []
         return Assignment(id, points, kind, parsedTests, dicts)
     @property
     def itemsToCopy(self):
@@ -174,10 +177,6 @@ class Assignment:
                 raise ValueError(f'Key {k} must be set for assignment {self.id}')
             else:
                 return None
-    @property
-    def hasTests(self):
-        disabled = getFromDicts(self.dicts, 'disable-tests', default=False)
-        return not disabled
     @property
     def submissionFileGlob(self):
         return '*' + self.submissionFileExt
