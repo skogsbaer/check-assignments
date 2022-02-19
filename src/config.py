@@ -28,40 +28,99 @@ def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True):
     except:
         raise ValueError(f'Value for key {k} in {dicts[0]} has wrong type: {val}')
 
+def getAsList(dicts, k):
+    x = getFromDicts(dicts, k, default=[])
+    if type(x) == list or type(x) == tuple:
+        return x
+    elif x:
+        return [x]
+    else:
+        return []
+
 class Keys:
-    mainFile = 'main-file'
-    testFiles = 'test-files'
-    testFile = 'test-file'
-    testFilter = 'test-filter'
-    testFilters = 'test-filters'
     dirsAreUids = 'dirs-are-uids'
-    testDir = 'test-dir'
-    testDirs = 'test-dirs'
+    tests = 'tests'
+
+@dataclass
+class Test:
+    id: str
+    dir: str
+    filter: str
+    file: str
+    @staticmethod
+    def parse(assignmentId: int, id: Optional[str], dicts: list[dict], fail: bool = True):
+        dir = getFromDicts(dicts, 'dir')
+        file = getFromDicts(dicts, 'file', false=False)
+        if file:
+            file = shell.pjoin(dir, file)
+        filter = getFromDicts(dicts, 'filter', false=False)
+        testId = str(assignmentId)
+        if id:
+            testId = f'{testId}_{id}'
+        if not file and not filter:
+            if fail:
+                testName = f'test {id}' if id else 'test'
+                raise ValueError(f"Invalid {testName} without file and without filter")
+            else:
+                return None
+        if file:
+            file = shell.pjoin(dir, file)
+        return Test(testId, dir, filter, file)
+    def outputFile(self, studentDir):
+        return shell.pjoin(studentDir, f'OUTPUT_{self.id}.txt')
+    @property
+    def timeout(self):
+        defTimeout = 10
+        timeout = getFromDicts(self.dicts, 'timeout', default=defTimeout)
+        if timeout == False:
+            return None
+        elif timeout == True:
+            return defTimeout
+        elif isinstance(timeout, int):
+            return timeout
+        else:
+            raise Exception(f'Invalid type for timeout property of tests {self.id}: ' \
+                'must be a bool or an int')
+    @property
+    def scriptArgs(self):
+        return getAsList(self.dicts, "scriptArgs")
+
 
 @dataclass
 class Assignment:
     id: int
     points: int
     kind: str
+    tests: list[Test]
     dicts: list[Dict]
     def __post_init__(self):
         if type(self.id) != int:
             raise TypeError("Assignment.id must be an int")
+    @staticmethod
     def parse(id, dicts):
         points = getFromDicts(dicts, 'points', int)
         kind = getFromDicts(dicts, 'kind')
-        return Assignment(id, points, kind, dicts)
-    def getMainFile(self, d, fail=False):
-        return self.getFile(Keys.mainFile, d, fail)
-    def getGradleFile(self, d, fail=False):
-        return self.getFile(Keys.gradleFile, d, fail)
-    def getValue(self, k, fail=True):
-        val = getFromDicts(self.dicts, k, fail=False)
-        if val is None and fail:
-            raise ValueError(f'Key {k} must be set for assignment {self.id}')
+        tests = getFromDicts(dicts, Keys.test, default={}, fail=False)
+        if not tests:
+            t = Test.parse(id, None, dicts, fail=False)
+            if t:
+                parsedTests = [t]
+            else:
+                parsedTests = []
         else:
-            return val
-    def getFile(self, k, d, fail=True):
+            parsedTests = []
+            for k, v in tests:
+                t = Test.parse(id, k, [v] + dicts)
+                parsedTests.append(t)
+        return Assignment(id, points, kind, parsedTests, dicts)
+    @property
+    def itemsToCopy(self):
+        return self.getAsList('copy')
+    def studentOutputFile(self, studentDir):
+        return shell.pjoin(studentDir, f'OUTPUT_student_{str(self.id)}.txt')
+    def getMainFile(self, d, fail=False):
+        return self._getFile(Keys.mainFile, d, fail)
+    def _getFile(self, k, d, fail=True):
         x = getFromDicts(self.dicts, k, fail=fail)
         if x is not None:
             return shell.pjoin(d, x)
@@ -70,47 +129,6 @@ class Assignment:
                 raise ValueError(f'Key {k} must be set for assignment {self.id}')
             else:
                 return None
-    def getAsList(self, k):
-        x = getFromDicts(self.dicts, k, default=[])
-        if type(x) == list or type(x) == tuple:
-            return x
-        elif x:
-            return [x]
-        else:
-            return []
-    def getAsFileList(self, d, k):
-        items = self.getAsList(k)
-        return [shell.pjoin(d, x) for x in items]
-    @property
-    def copyItems(self):
-        return self.getAsList('copy')
-
-    def getTestDirs(self):
-        return self._getTestSomething([Keys.testDir, Keys.testDirs])
-
-    def getTestFilters(self):
-        return self._getTestSomething([Keys.testFilter, Keys.testFilters])
-
-    def getTestFiles(self, d):
-        return self._getTestSomething([Keys.testFiles, Keys.testFile], lambda v: shell.pjoin(d, v))
-
-    def _getTestSomething(self, keys, mapper=lambda x: x):
-        result = []
-        for x in [x for k in keys for x in self.getAsList(k)]:
-            if isinstance(x, dict):
-                for k, v in x.items():
-                    testFile = mapper(v)
-                    result.append( (k, testFile) )
-            elif isinstance(x, str):
-                try:
-                    i = x.index(':')
-                    k = x[:i]
-                    v = mapper(x[i+1:])
-                    result.append( (k, v) )
-                except ValueError:
-                    result.append( (x, mapper(x)) )
-        return result
-
     @property
     def hasTests(self):
         disabled = getFromDicts(self.dicts, 'disable-tests', default=False)
@@ -128,26 +146,6 @@ class Assignment:
             return '.hs'
         else:
             raise Exception(f"Unknown assignment kind: {self.kind}")
-    def studentOutputFile(self, studentDir):
-        return shell.pjoin(studentDir, f'OUTPUT_student_{self.id}.txt')
-    def outputFile(self, studentDir, suffix=''):
-        return shell.pjoin(studentDir, f'OUTPUT_{self.id}{suffix}.txt')
-    @property
-    def timeout(self):
-        defTimeout = 10
-        timeout = getFromDicts(self.dicts, 'timeout', default=defTimeout)
-        if timeout == False:
-            return None
-        elif timeout == True:
-            return defTimeout
-        elif isinstance(timeout, int):
-            return timeout
-        else:
-            raise Exception(f'Invalid type for timeout property of assignment {self.id}: ' \
-                'must be a bool or an int')
-    @property
-    def scriptArgs(self):
-        return self.getAsList("scriptArgs")
 
 def expandVarsInStr(s, vars):
     return string.Template(s).safe_substitute(vars)
@@ -175,12 +173,10 @@ class Config:
     baseDir: str
     assignments: List[Assignment]
     configDict: Dict
-    testDir: str
 
-    def __init__(self, baseDir, configDict, assignments, testDir):
+    def __init__(self, baseDir, configDict, assignments):
         self.assignments = assignments
         self.configDict = configDict
-        self.testDir = testDir
         self.baseDir = baseDir
         self.feedbackZip = 'feedback.zip'
         self.lang = 'de'
@@ -193,8 +189,7 @@ class Config:
         for k, v in ymlDict['assignments'].items():
             a = Assignment.parse(k, [v, ymlDict])
             assignments.append(a)
-        testDir = ymlDict.get('test-dir', shell.pjoin(baseDir, 'tests'))
-        return Config(baseDir, ymlDict, assignments, testDir)
+        return Config(baseDir, ymlDict, assignments)
 
     def isSubmissionDir(self, x):
         if self.configDict.get(Keys.dirsAreUids, False):

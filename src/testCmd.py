@@ -110,7 +110,7 @@ def moveToBackup(path):
     raise ValueError(f"tpp many backups for {path}")
 
 def copyIntoStudentDir(assignment: Assignment, studentDir: str):
-    for src in assignment.copyItems:
+    for src in assignment.itemsToCopy:
         target = shell.pjoin(studentDir, shell.basename(src))
         if not fileSystemItemEquals(src, target):
             print(f'Copying {src} to {studentDir} ...')

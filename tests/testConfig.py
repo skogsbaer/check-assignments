@@ -8,7 +8,7 @@ class ConfigTest(unittest.TestCase):
         testDir = d + 'code/tutor/'
         self.assertEqual(d + 'code/tutor/', cfg.testDir)
         a1 = cfg.assignments[0]
-        self.assertEqual([d + 'stack.yaml', d + 'package.yaml', d + 'sample-dir'], a1.copyItems)
+        self.assertEqual([d + 'stack.yaml', d + 'package.yaml', d + 'sample-dir'], a1.itemsToCopy)
         tests1 = a1.getTestFiles(cfg.testDir)
         self.assertEqual([
             ('a', testDir + 'TutorTests04_01_a.hs'), ('b', testDir + 'TutorTests04_01_b.hs'),
