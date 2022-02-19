@@ -35,6 +35,8 @@ class Keys:
     testFilter = 'test-filter'
     testFilters = 'test-filters'
     dirsAreUids = 'dirs-are-uids'
+    testDir = 'test-dir'
+    testDirs = 'test-dirs'
 
 @dataclass
 class Assignment:
@@ -82,6 +84,9 @@ class Assignment:
     @property
     def copyItems(self):
         return self.getAsList('copy')
+
+    def getTestDirs(self):
+        return self._getTestSomething([Keys.testDir, Keys.testDirs])
 
     def getTestFilters(self):
         return self._getTestSomething([Keys.testFilter, Keys.testFilters])

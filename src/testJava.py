@@ -33,25 +33,31 @@ def runJavaTests(ctx, studentDir: str, assignment: Assignment):
     allFilters = assignment.getTestFilters()
     if not allFilters:
         allFilters = [('', '*')]
-    for filterId, filter in allFilters:
-        if len(allFilters) == 1 or not filterId:
+    allTestDirs = assignment.getTestDirs()
+    if not allTestDirs:
+        allTestDirs = [cfg.testDir]
+    for testDirId, testDir in allTestDirs:
+        for filterId, filter in allFilters:
             testId = str(assignment.id)
-        else:
-            testId = str(assignment.id) + '_' + filterId
-        result = _runJavaTest(ctx, studentDir, testId, filter, assignment.hasTests)
-        print(result)
-        print(result.ratio())
-        part = filterId or None
-        ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'C',
-            0 if result.compileError else 1, part=part)
-        ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'T', result.ratio(), part=part)
+            parts = []
+            if len(allTestDirs) > 1 and testDirId:
+                testId = f'{testId}_{testDirId}'
+                parts.append(testDirId)
+            if len(allFilters) > 1 and filterId:
+                testId = f'{testId}_{filterId.replace("*", "-")}'
+                parts.append(filterId)
+            result = _runJavaTest(ctx, testDir, studentDir, testId, filter, assignment.hasTests)
+            part = ' '.join(parts)
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'C',
+                0 if result.compileError else 1, part=part)
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, 'T', result.ratio(), part=part)
 
 
-def _runJavaTest(ctx, studentDir: str, testId: str, filter: str, hasTests: bool):
+def _runJavaTest(ctx, testDir: str, studentDir: str, testId: str, filter: str, hasTests: bool):
     cfg = ctx.cfg
     gradleProps = {
         'testFilter': filter,
-        'testDir': cfg.testDir,
+        'testDir': testDir,
         'studentDir': cfg.studentCodedir(studentDir)
     }
     gradlePropArgs = []
