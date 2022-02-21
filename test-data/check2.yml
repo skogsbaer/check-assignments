@@ -1,0 +1,11 @@
+kind: java
+dir: /Users/swehr/Teaching/AKI_Prog_Java/Klausur_WS2122/AKI_Prog_Java_Klausur_WS2122_Solution/
+student-codedir: sub
+assignments:
+  2:
+    points: 28
+    dir: "${student-codedir}/src/klausur/aufgabe_02"
+    test-filter: "*"
+    tests:
+      a:
+        test-dir: "$dir/test_2A"
