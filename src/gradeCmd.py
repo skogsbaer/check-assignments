@@ -34,22 +34,25 @@ def prettyStudent(cfg, studentDir):
         x = stripTrailingSlash(x)
         return x
 
-def copyTemplate(studentDir: str, studentId: str, path: str):
+def copyTemplate(studentDir: str, studentId: str, path: str, copy: bool):
     (b, e) = shell.splitExt(shell.basename(path))
     for t in ['_TEMPLATE_', 'TEMPLATE_', '_TEMPLATE', 'TEMPLATE']:
         b = b.replace(t, '')
     b = b + '_' + studentId
     newPath = shell.pjoin(studentDir, b) + e
     if not shell.isFile(newPath):
-        note(f"Copying template {path} to {newPath}")
-        shell.cp(path, newPath)
-        spreadsheet.replaceData(newPath, 'ID', 'STUDENT_ID', studentId)
+        if copy:
+            note(f"Copying template {path} to {newPath}")
+            shell.cp(path, newPath)
+            spreadsheet.replaceData(newPath, 'ID', 'STUDENT_ID', studentId)
+        else:
+            return None
     return newPath
 
-def getSpreadsheet(studentDir: str, studentId: str, assignment: Assignment):
+def getSpreadsheet(studentDir: str, studentId: str, assignment: Assignment, copy=True):
     templatePath = assignment.spreadsheetTemplatePath
     if templatePath:
-        p = copyTemplate(studentDir, studentId, templatePath)
+        p = copyTemplate(studentDir, studentId, templatePath, copy)
         return (p, assignment.spreadsheetTemplateAssignmentResultSheet)
     else:
         return (assignment.spreadsheetPath, assignment.spreadsheetAssignmentResultSheet)

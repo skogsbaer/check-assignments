@@ -31,16 +31,38 @@ def cellValue(sheet, column, row):
     else:
         return None
 
-def findColumnIndex(sheet, title: str) -> int:
-    ix = None
+def findColumnIndex(sheet, title: Union[str, list[str]]) -> list[int]:
+    if not isinstance(title, list):
+        title = [title]
+    ixs = []
     for col in range(1, sheet.max_column + 1):
         v = cellValue(sheet, column=col, row=1)
+        if v in title:
+            ixs.append(col)
+    return ixs
+
+def findRowIndex(sheet, title: Union[str, list[str]]) -> list[int]:
+    if not isinstance(title, list):
+        title = [title]
+    ixs = []
+    for row in range(1, sheet.max_row + 1):
+        v = cellValue(sheet, column=1, row=row)
+        if v in title:
+            ixs.append(row)
+    return ixs
+
+def getDataFromRow(path: str, sheetName: str, rowTitle: Union[str, list[str]]):
+    (_wb, sheet) = openSheet(path, sheetName)
+    ixs = findRowIndex(sheet, rowTitle)
+    if len(ixs) != 1:
+        raise ValueError("Sheet {sheetName} of spreadsheet {path} has more than one row with " \
+            f"titles {rowTitle}")
+    row = ixs[0]
+    for col in range(2, sheet.max_column + 1):
+        v = cellValue(sheet, column=col, row=row)
         if v:
-            if v == title:
-                if ix is not None:
-                    raise ValueError(f'Duplicate column {title}')
-                ix = col
-    return ix
+            return v
+    return None
 
 def replaceData(path: str, colTitle: str, oldValue: str, newValue: str,
     sheetName: Optional[str] = None):
@@ -54,7 +76,7 @@ def replaceData(path: str, colTitle: str, oldValue: str, newValue: str,
     saveExcelSpreadsheet(path, wb)
 
 def enterData(path: str,
-    idColumn: str, idValue: Union[str, list[str]],
+    idColumn: str | list[str], idValue: Union[str, list[str]],
     dataColumn: str, data: str,
     sheetName: Optional[str] = None):
     """
@@ -68,9 +90,11 @@ def enterData(path: str,
     if not isinstance(idValue, list):
         idValue = [idValue]
     (wb, sheet) = openSheet(path, sheetName)
-    idColumnIx = findColumnIndex(sheet, idColumn)
-    dataColumnIx = findColumnIndex(sheet, dataColumn)
-    if dataColumnIx is None:
+    idColumnIxs = findColumnIndex(sheet, idColumn)
+    if not idColumnIxs:
+        raise ValueError(f'No column named {idColumn} found at {path} ({sheetName})')
+    dataColumnIxs = findColumnIndex(sheet, dataColumn)
+    if not dataColumnIxs:
         # Check whether the name of the dataColumn is split over two rows
         last = ''
         firstRow = []
@@ -89,22 +113,23 @@ def enterData(path: str,
                 if col - 1 < len(firstRow):
                     oneAbove = firstRow[col - 1]
                     if (oneAbove + ' ' + v) == dataColumn or (oneAbove + v) == dataColumn:
-                        if dataColumnIx is not None:
+                        if dataColumnIxs:
                             raise ValueError(f'Duplicate dataColumn {dataColumn} at {path}')
-                        dataColumnIx = col
-    if idColumnIx is None:
-        raise ValueError(f'No column named {idColumn} found at {path} ({sheetName})')
-    if dataColumnIx is None:
+                        dataColumnIxs = [col]
+    if not dataColumnIxs:
         dataColumnIx = sheet.max_column + 1
         sheet.cell(column=dataColumnIx, row=1, value=dataColumn)
+    else:
+        dataColumnIx = dataColumnIxs[0]
     rowIx = None
     for row in range(1, sheet.max_row + 1):
-        v = cellValue(sheet, column=idColumnIx, row=row)
-        if v:
-            if v in idValue:
-                if rowIx is not None:
-                    raise ValueError(f'Duplicate ID {idValue} in column {idColumn} at {path}')
-                rowIx = row
+        for idColumnIx in idColumnIxs:
+            v = cellValue(sheet, column=idColumnIx, row=row)
+            if v:
+                if v in idValue:
+                    if rowIx is not None and rowIx != row:
+                        raise ValueError(f'Duplicate ID {idValue} in column {idColumn} at {path}')
+                    rowIx = row
     if rowIx is None:
         raise ValueError(f'No row found with value {idValue} in column {idColumn} at {path}')
     verbose(f'Storing {data} at column={dataColumnIx}, row={rowIx} in {path} (sheet: {sheetName})')

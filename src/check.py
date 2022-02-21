@@ -9,6 +9,7 @@ import filenamesCmd
 import jplagCmd
 import fixEncodingCmd
 import gradeCmd
+import collectCmd
 from ownLogging import *
 from utils import *
 from config import *
@@ -79,6 +80,8 @@ def parseArgs():
     export = subparsers.add_parser('export',
                                    help='From rating.xlsx, generate a POINTS.txt file for each student and a single .csv file for uploading in moodle')
     fixEnc = subparsers.add_parser('fixEncoding', help='Fix encoding of source files.')
+    collect = subparsers.add_parser('collect', help='Colllect credits for assignment and store in spreadsheet')
+    collect.add_argument('file', metavar='EXCEL_FILE', type=str, help='The spreadsheet where credits should be stored')
     return parser.parse_args()
 
 def main():
@@ -144,6 +147,8 @@ def main():
         jplagCmd.jplag(config, a)
     elif args.cmd == 'fixEncoding':
         fixEncodingCmd.fixEncoding(config)
+    elif args.cmd == 'collect':
+        collectCmd.collect(config, args.file)
     else:
         warn('Unknown command: ' + args.cmd)
 
