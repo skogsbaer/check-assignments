@@ -239,8 +239,11 @@ class Assignment:
     def spreadsheetAssignmentResultSheet(self):
         return getCustomRatingSheet(self.dicts, 'rating-sheet', 'sheet')
 
+class MyTemplate(string.Template):
+    braceidpattern = r'(?a:[_a-z][-_a-z0-9]*)'
+
 def expandVarsInStr(s, vars):
-    return string.Template(s).safe_substitute(vars)
+    return MyTemplate(s).safe_substitute(vars)
 
 def expandVars(y, vars):
     if isinstance(y, str):

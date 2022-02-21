@@ -8,6 +8,7 @@ import unzipCmd
 import filenamesCmd
 import jplagCmd
 import fixEncodingCmd
+import gradeCmd
 from ownLogging import *
 from utils import *
 from config import *
@@ -66,6 +67,11 @@ def parseArgs():
     runTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
     runTests.add_argument('--sanityCheck', help='Only perform sanity checks on submission, do not run tests',
                           action='store_true', default=False)
+    grade = subparsers.add_parser('grade', help='Grading')
+    grade.add_argument('dirs', metavar='DIR', type=str, nargs='*',
+                       help='The student directories to run the tests for.')
+    grade.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
+    grade.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
     importCmd = subparsers.add_parser('import', help='Import a .csv file from moodle to produce an Excel spreadsheet for rating')
     importCmd.add_argument('file', metavar='CSV_FILE', type=str, help='A .csv file from moodle')
     prepareCmd = subparsers.add_parser('prepare', help='Shortcut for import+unzip+addComment')
@@ -124,6 +130,13 @@ def main():
             stripSlashes(args.startAt),
             args.sanityCheck)
         testCmd.runTests(config, a)
+    elif args.cmd == 'grade':
+        if args.assignments:
+            assignments = args.assignments.split(',')
+        else:
+            assignments = []
+        a = gradeCmd.GradeArgs(args.dirs, assignments, stripSlashes(args.startAt))
+        gradeCmd.grade(config, a)
     elif args.cmd == 'export':
         exportCmd.export(config)
     elif args.cmd == 'jplag':

@@ -58,7 +58,7 @@ def parseSubmissionDir(cfg, d):
     x = stripTrailingSlash(x)
     if not cfg.isSubmissionDir(x):
         raise ValueError(f'Invalid submission directory: {x}')
-    comps = x.split('_')
+    comps = [s.strip() for s in x.split('_')]
     if len(comps) == 0:
         raise ValueError(f'Invalid submission directory: {x}')
     elif len(comps) == 1:

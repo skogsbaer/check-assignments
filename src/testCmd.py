@@ -15,6 +15,7 @@ import utils
 import spreadsheet
 from testCommon import *
 from ownLogging import *
+import gradeCmd
 
 @dataclass
 class TestArgs:
@@ -23,26 +24,6 @@ class TestArgs:
     interactive: bool
     startAt: str
     sanityCheck: bool
-
-def copyTemplate(studentDir: str, studentId: str, path: str):
-    (b, e) = shell.splitExt(shell.basename(path))
-    for t in ['_TEMPLATE_', 'TEMPLATE_', '_TEMPLATE', 'TEMPLATE']:
-        b = b.replace(t, '')
-    b = b + '_' + studentId
-    newPath = shell.pjoin(studentDir, b) + e
-    if not shell.isFile(newPath):
-        note(f"Copying template {path} to {newPath}")
-        shell.cp(path, newPath)
-        spreadsheet.replaceData(newPath, 'ID', 'STUDENT_ID', studentId)
-    return newPath
-
-def getSpreadsheet(studentDir: str, studentId: str, assignment: Assignment):
-    templatePath = assignment.spreadsheetTemplatePath
-    if templatePath:
-        p = copyTemplate(studentDir, studentId, templatePath)
-        return (p, assignment.spreadsheetTemplateAssignmentResultSheet)
-    else:
-        return (assignment.spreadsheetPath, assignment.spreadsheetAssignmentResultSheet)
 
 class Context:
     def __init__(self, cfg: Config, args: TestArgs):
@@ -55,8 +36,7 @@ class Context:
         if type(suffixes) == str:
             suffixes = [suffixes]
         (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
-        id = id.strip()
-        (path, sheet) = getSpreadsheet(studentDir, id, assignment)
+        (path, sheet) = gradeCmd.getSpreadsheet(studentDir, id, assignment)
         if not shell.isFile(path):
             print(red(f'No spreadsheet at {path}, continuing without storing results'))
             return
@@ -111,17 +91,7 @@ TEST_DICT = {
     'haskell': testHaskell.runHaskellTests
 }
 
-def prettyStudent(cfg, studentDir):
-    try:
-        (name, matrikel) = parseSubmissionDir(cfg, studentDir)
-        return f'{name} ({matrikel})'
-    except ValueError:
-        x = shell.basename(studentDir)
-        if not x:
-            x = studentDir
-        x = stripLeadingSlash(x)
-        x = stripTrailingSlash(x)
-        return x
+prettyStudent = gradeCmd.prettyStudent
 
 def moveToBackup(path):
     if not shell.exists(path):
@@ -188,35 +158,15 @@ def interactiveLoopStudent(cfg, args, studentDir, assignments):
     return ctx.failed
 
 def runTests(cfg, args):
-    dirs = args.dirs
-    if not dirs:
-        dirs = collectSubmissionDirs(cfg)
-    dirs = sorted(dirs)
-    verbose(f"Submission directories: {dirs}")
-    if args.startAt:
-        l = dirs
-        dirs = []
-        for x in l:
-            if shell.basename(x) >= args.startAt:
-                dirs.append(x)
-            else:
-                print(f'Skipping {x} as requested')
     failures = []
     success = []
-    for d in dirs:
-        assignments = cfg.assignments
-        if args.assignments:
-            assignments = []
-            for a in cfg.assignments:
-                if a.id in args.assignments:
-                    assignments.append(a)
-        if not assignments:
-            print(f'No assignments found or selected!')
+    def action(d, assignments):
         failed = interactiveLoopStudent(cfg, args, d, assignments)
         if failed is True:
             failures.append(d)
         elif failed is False:
             success.append(d)
+    dirs = gradeCmd.forEach(cfg, args, action)
     if failures:
         print()
         print(red(f'The following students failed: '))
