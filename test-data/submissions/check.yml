@@ -21,4 +21,4 @@ assignments:
     main-file: "ex04/Assignment_04.hs"
     tests:
       A:
-        file: "Test_04.hs"
+        test-file: "Test_04.hs"

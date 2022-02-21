@@ -420,11 +420,12 @@ def mkTempDir(suffix='', prefix='tmp', dir=None, deleteAtExit=True):
     return d
 
 class tempDir:
-    def __init__(self, suffix='', prefix='tmp', dir=None, onException=True):
+    def __init__(self, suffix='', prefix='tmp', dir=None, onException=True, delete=True):
         self.suffix = suffix
         self.prefix = prefix
         self.dir = dir
         self.onException = onException
+        self.delete = delete
     def __enter__(self):
         self.dir_to_delete = mkTempDir(suffix=self.suffix,
                                        prefix=self.prefix,
@@ -434,7 +435,8 @@ class tempDir:
     def __exit__(self, exc_type, value, traceback):
         if exc_type is not None and not self.onException:
             return False # reraise
-        rmdir(self.dir_to_delete, recursive=True)
+        if self.delete:
+            rmdir(self.dir_to_delete, recursive=True)
         return False # reraise expection
 
 def ls(d, *globs):

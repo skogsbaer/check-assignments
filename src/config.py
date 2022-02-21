@@ -8,7 +8,7 @@ import re
 import utils
 import string
 
-def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True, prefix=''):
+def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True):
     if type(dicts) is not list:
         dicts = [dicts]
     val = None
@@ -16,11 +16,6 @@ def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True, prefix='')
         if k in d:
             val = d[k]
             break
-        if i == 0:
-            k = prefix + k
-            if k in d:
-                val = d[k]
-                break
     else:
         val = default
     if val is None:
@@ -70,17 +65,17 @@ class Test:
 
     @staticmethod
     def parse(baseDir, assignmentId: int, id: Optional[str], dicts: list[dict], fail: bool = True):
-        dir = getFromDicts(dicts, 'dir', prefix="test-", default=defaultTestDir(baseDir))
-        file = getFromDicts(dicts, 'file', fail=False, prefix="test-")
+        dir = getFromDicts(dicts, 'test-dir', default=defaultTestDir(baseDir))
+        file = getFromDicts(dicts, 'test-file', fail=False)
         if file:
             file = shell.pjoin(dir, file)
-        filter = getFromDicts(dicts, 'filter', fail=False, prefix="test-")
+        filter = getFromDicts(dicts, 'test-filter', fail=False)
         testId = str(assignmentId)
         if id:
             testId = f'{testId}_{id}'
         if not file and not filter:
             if fail:
-                testName = f'test {id}' if id else 'test'
+                testName = f'test "{id}"' if id else 'test'
                 raise ValueError(f"Invalid {testName} without file and without filter")
             else:
                 return None
@@ -93,14 +88,14 @@ class Test:
     def file(self):
         x = self._file
         if x is None:
-            raise ValueError(f'Test {self.id} has no file')
+            raise ValueError(f'Test "{self.id}" has no file')
         return x
 
     @property
     def filter(self):
         x = self._filter
         if x is None:
-            raise ValueError(f'Test {self.id} has no filter')
+            raise ValueError(f'Test "{self.id}" has no filter')
         return x
 
     @property
@@ -196,6 +191,12 @@ class Assignment:
         return shell.pjoin(studentDir, f'OUTPUT_student_{str(self.id)}.txt')
     def getMainFile(self, d, fail=False):
         return self._getFile(Keys.mainFile, d, fail)
+    def dir(self, d):
+        x = getFromDicts(self.dicts, 'dir', fail=False)
+        if x is None:
+            return None
+        else:
+            return shell.pjoin(d, x)
     def _getFile(self, k, d, fail=True):
         x = getFromDicts(self.dicts, k, fail=fail)
         if x is not None:
@@ -246,6 +247,7 @@ def expandVarsInStr(s, vars):
     return MyTemplate(s).safe_substitute(vars)
 
 def expandVars(y, vars):
+    # print(f'expandVars({y}, {vars})')
     if isinstance(y, str):
         return expandVarsInStr(y, vars)
     elif isinstance(y, list):
@@ -256,7 +258,9 @@ def expandVars(y, vars):
     elif isinstance(y, dict):
         result = {}
         for k, v in y.items():
-            result[k] = expandVars(v, vars)
+            newVars = vars.copy()
+            newVars.update(result)
+            result[k] = expandVars(v, newVars)
         return result
     else:
         return y

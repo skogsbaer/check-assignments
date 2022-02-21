@@ -30,13 +30,24 @@ class Result:
         return Result(compileError, nPass + nFail, nFail)
 
 def runJavaTests(ctx, studentDir: str, assignment: Assignment):
-    _runJavaTest(ctx, studentDir, assignment, str(assignment.id), "NOT_EXISTING_TEST_DIR",
+    d = assignment.dir('.')
+    if d:
+        withLimitedDir(studentDir, [d],
+            lambda d: _runJavaTests(ctx, studentDir, ctx.cfg.studentCodedir(d), assignment))
+    else:
+        codeDir = ctx.cfg.studentCodedir(studentDir)
+        _runJavaTests(ctx, studentDir, codeDir, assignment)
+
+def _runJavaTests(ctx, studentDir: str, codeDir: str, assignment: Assignment):
+    _runJavaTest(ctx, studentDir, codeDir, assignment, str(assignment.id), "NOT_EXISTING_TEST_DIR",
         None, hasTests=False, isStudent=True)
+    _runJavaTest(ctx, studentDir, codeDir, assignment, str(assignment.id), codeDir,
+        None, hasTests=True, isStudent=True)
     for t in assignment.tests:
-        _runJavaTest(ctx, studentDir, assignment, t.id, t.dir, t.filter,
+        _runJavaTest(ctx, studentDir, codeDir, assignment, t.id, t.dir, t.filter,
             hasTests=True, isStudent=False)
 
-def _runJavaTest(ctx, studentDir: str, assignment: Assignment, testId: str, testDir: str,
+def _runJavaTest(ctx, studentDir: str, codeDir: str, assignment: Assignment, testId: str, testDir: str,
     filter: Optional[str], hasTests: bool, isStudent: bool):
     cfg = ctx.cfg
     if filter is None:
@@ -44,7 +55,7 @@ def _runJavaTest(ctx, studentDir: str, assignment: Assignment, testId: str, test
     gradleProps = {
         'testFilter': filter,
         'testDir': testDir,
-        'studentDir': cfg.studentCodedir(studentDir)
+        'studentDir': codeDir
     }
     gradlePropArgs = []
     for k, v in gradleProps.items():

@@ -73,7 +73,7 @@ def forEach(cfg: Config, args, action):
         if args.assignments:
             assignments = []
             for a in cfg.assignments:
-                if a.id in args.assignments:
+                if str(a.id) in args.assignments:
                     assignments.append(a)
         if not assignments:
             print(f'No assignments found or selected!')

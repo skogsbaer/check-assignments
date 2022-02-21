@@ -1,6 +1,7 @@
 import shell
 import os
 import zipfile
+import shutil
 
 def readBinaryFile(name):
     with open(name, 'rb') as f:
@@ -152,3 +153,12 @@ def fileSystemItemEquals(path1: str, path2: str):
         return True
     else:
         return False
+
+def withLimitedDir(sourceDir, subdirs, action):
+    with shell.tempDir(suffix=shell.basename(sourceDir), delete=True) as tmp:
+        for sub in subdirs:
+            target = shell.pjoin(tmp, sub)
+            shell.mkdir(target, createParents=True)
+            shutil.copytree(shell.pjoin(sourceDir, sub), target, dirs_exist_ok=True)
+        action(tmp)
+

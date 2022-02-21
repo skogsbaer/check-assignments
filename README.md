@@ -7,7 +7,7 @@ in Java, Python and Haskell.
 
 ## General
 
-* Python 3.8 or 3.9: https://www.python.org
+* Python 3.9 or 3.10: https://www.python.org
 * PIP, the package installer for Python: https://pypi.org/project/pip/
 * Python libraries:
   * pyyaml: `pip install pyyaml`
