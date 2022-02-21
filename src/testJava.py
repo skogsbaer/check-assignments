@@ -30,12 +30,14 @@ class Result:
         return Result(compileError, nPass + nFail, nFail)
 
 def runJavaTests(ctx, studentDir: str, assignment: Assignment):
-    _runJavaTest(ctx, studentDir, str(assignment.id), "NOT_EXISTING_TEST_DIR", None, False, True)
+    _runJavaTest(ctx, studentDir, assignment, str(assignment.id), "NOT_EXISTING_TEST_DIR",
+        None, hasTests=False, isStudent=True)
     for t in assignment.tests:
-        _runJavaTest(ctx, studentDir, t.id, t.dir, t.filter, True, False)
+        _runJavaTest(ctx, studentDir, assignment, t.id, t.dir, t.filter,
+            hasTests=True, isStudent=False)
 
-def _runJavaTest(ctx, studentDir: str, testId: str, testDir: str, filter: Optional[str],
-    hasTests: bool, isStudent: bool):
+def _runJavaTest(ctx, studentDir: str, assignment: Assignment, testId: str, testDir: str,
+    filter: Optional[str], hasTests: bool, isStudent: bool):
     cfg = ctx.cfg
     if filter is None:
         filter = '*'
@@ -68,7 +70,7 @@ def _runJavaTest(ctx, studentDir: str, testId: str, testDir: str, filter: Option
         print(red(f'Test {testId} FAILED, see above'))
     result = Result.parseResult(output)
     prefix = 'S' if isStudent else ''
-    ctx.storeTestResultInSpreadsheet(studentDir, testId, [prefix + 'C'],
+    ctx.storeTestResultInSpreadsheet(studentDir, assignment, testId, [prefix + 'C'],
         0 if result.compileError else 1)
     if hasTests:
-        ctx.storeTestResultInSpreadsheet(studentDir, testId, [prefix + 'T'], result.ratio())
+        ctx.storeTestResultInSpreadsheet(studentDir, assignment, testId, [prefix + 'T'], result.ratio())

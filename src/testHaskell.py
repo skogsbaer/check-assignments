@@ -105,7 +105,7 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
                                       args,
                                       logFileStud,
                                       'student')
-            ctx.storeTestResultInSpreadsheet(studentDir, str(assignment.id), 'ST', result)
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, str(assignment.id), 'ST', result)
         ctx.acc = ctx.acc + [studMain]
     else:
         print(f"Students tests in {studMain} already run.")
@@ -127,7 +127,7 @@ def runHaskellTestsInStudentDir(ctx, studentDir: str, assignment: Assignment):
             allOpts = None
         result = _runHaskellTests(assignment, studMain, allOpts, logFileTutor, 'instructor')
         if result is not None:
-            ctx.storeTestResultInSpreadsheet(studentDir, t.id, 'TT', result)
+            ctx.storeTestResultInSpreadsheet(studentDir, assignment, t.id, 'TT', result)
 
 haskellTestRe = re.compile(r'^Cases:\s*(\d+)\s*Tried:\s*(\d+)\s*Errors:\s*(\d+)\s*Failures:\s*(\d+)')
 

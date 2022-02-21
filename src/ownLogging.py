@@ -11,6 +11,9 @@ def enableVerboseLogging():
     global VERBOSE
     VERBOSE = True
 
+def note(msg):
+    print(msg)
+
 def verbose(msg):
     if VERBOSE:
         print('[V] ' + msg)

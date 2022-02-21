@@ -58,6 +58,9 @@ class Keys:
 def defaultTestDir(baseDir):
     return shell.pjoin(baseDir, 'tests')
 
+def defaultRatingSheet(baseDir):
+    return shell.pjoin(baseDir, 'rating.xlsx')
+
 @dataclass
 class Test:
     id: str
@@ -122,9 +125,34 @@ def getSingularPlural(dicts, kSing, kPlur):
     ys = getAsList(dicts, kPlur)
     return xs + ys
 
+# A spreadsheet can be given as either
+# - FILEPATH (take the active sheet at FILEPATH)
+# - FILEPATH -> SHEET (take SHEET at FILEPATH)
+def getCustomRatingSheet(dicts, key: str, kind: Literal['path', 'sheet']):
+    custom = getFromDicts(dicts, key, default=None, fail=False)
+    if custom:
+        custom = custom.strip()
+        l = custom.split('->')
+        if len(l) <= 1:
+            path = custom
+            sheet = None
+        elif len(l) == 2:
+            path = l[0].strip()
+            sheet = l[1].strip()
+        else:
+            raise ValueError(f"Invalid sheet specification: {custom}")
+    else:
+        path = None
+        sheet = None
+    if kind == 'path':
+        return path
+    else:
+        return sheet
+
 @dataclass
 class Assignment:
     id: int
+    baseDir: str
     points: int
     kind: str
     tests: list[Test]
@@ -160,7 +188,7 @@ class Assignment:
         disabledTests = getFromDicts(dicts, 'disable-tests', default=False)
         if disabledTests:
             parsedTests = []
-        return Assignment(id, points, kind, parsedTests, dicts)
+        return Assignment(id, baseDir, points, kind, parsedTests, dicts)
     @property
     def itemsToCopy(self):
         return getAsList(self.dicts, 'copy')
@@ -190,6 +218,26 @@ class Assignment:
             return '.hs'
         else:
             raise Exception(f"Unknown assignment kind: {self.kind}")
+
+    @property
+    def spreadsheetTemplatePath(self):
+        return getCustomRatingSheet(self.dicts, 'rating-template', 'path')
+
+    @property
+    def spreadsheetTemplateAssignmentResultSheet(self):
+        return getCustomRatingSheet(self.dicts, 'rating-template', 'sheet')
+
+    @property
+    def spreadsheetPath(self):
+        p = getCustomRatingSheet(self.dicts, 'rating-sheet', 'path')
+        if p is None:
+            return defaultRatingSheet(self.baseDir)
+        else:
+            return p
+
+    @property
+    def spreadsheetAssignmentResultSheet(self):
+        return getCustomRatingSheet(self.dicts, 'rating-sheet', 'sheet')
 
 def expandVarsInStr(s, vars):
     return string.Template(s).safe_substitute(vars)
@@ -249,39 +297,6 @@ class Config:
     def wyppDir(self):
         return self.configDict.get('wypp', None)
 
-    # A spreadsheet can be given as either
-    # - FILEPATH (take the active sheet at FILEPATH)
-    # - FILEPATH -> SHEET (take SHEET at FILEPATH)
-    def getCustomRatingSheet(self):
-        custom = self.configDict.get('rating-sheet', None)
-        if custom:
-            custom = custom.strip()
-            l = custom.split('->')
-            if len(l) <= 1:
-                return (custom, None)
-            elif len(l) == 2:
-                return (l[0].strip(), l[1].strip())
-            else:
-                raise ValueError(f"Invalid sheet specification: {custom}")
-        else:
-            return None
-
-    @property
-    def spreadsheetPath(self):
-        custom = self.getCustomRatingSheet()
-        if custom:
-            return custom[0]
-        else:
-            return shell.pjoin(self.baseDir, 'rating.xlsx')
-
-    @property
-    def spreadsheetAssignmentResultSheet(self):
-        custom = self.getCustomRatingSheet()
-        if custom:
-            return custom[1]
-        else:
-            return None
-
     @property
     def ratingCsvPath(self):
         return shell.pjoin(self.baseDir, 'rating.csv')
@@ -321,6 +336,14 @@ class Config:
             return shell.pjoin(studentDir, sub)
         else:
             return studentDir
+
+    @property
+    def spreadsheetPath(self):
+        p = getCustomRatingSheet(self.configDict, 'rating-sheet', 'path')
+        if p is None:
+            return defaultRatingSheet(self.baseDir)
+        else:
+            return p
 
 def mkConfig(baseDir, configDict):
     if not shell.isdir(baseDir):

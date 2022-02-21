@@ -13,18 +13,18 @@ def runPythonTests(ctx, studentDir: str, assignment: Assignment):
         tests = assignment.tests
         if tests:
             for t in tests:
-                _runPythonTest(ctx, studentDir, t.id, testKindTutor,
+                _runPythonTest(ctx, studentDir, assignment, t.id, testKindTutor,
                     mainFile=assignment.getMainFile(studentDir),
                     testFile=t.file,
                     logFile=t.outputFile(studentDir))
         else:
-            _runPythonTest(ctx, studentDir, str(assignment.id), testKindStudent,
+            _runPythonTest(ctx, studentDir, assignment, str(assignment.id), testKindStudent,
                 mainFile=assignment.getMainFile(studentDir),
                 testFile=None,
                 logFile=assignment.studentOutputFile(studentDir))
 
 
-def _runPythonTest(ctx, studentDir: str, testId: str, testKind: TestKind,
+def _runPythonTest(ctx, studentDir: str, assignment: Assignment, testId: str, testKind: TestKind,
                    mainFile: str, testFile: Optional[str], logFile: str):
     cfg = ctx.cfg
     wyppDir = cfg.wyppDir
@@ -51,4 +51,4 @@ def _runPythonTest(ctx, studentDir: str, testId: str, testKind: TestKind,
     else:
         print(red(f'Test {testId} FAILED, see above'))
         spreadsheetResult = 0
-    ctx.storeTestResultInSpreadsheet(studentDir, testId, [testKind], spreadsheetResult)
+    ctx.storeTestResultInSpreadsheet(studentDir, assignment, testId, [testKind], spreadsheetResult)

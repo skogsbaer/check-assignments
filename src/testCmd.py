@@ -14,6 +14,7 @@ import testJava
 import utils
 import spreadsheet
 from testCommon import *
+from ownLogging import *
 
 @dataclass
 class TestArgs:
@@ -23,27 +24,48 @@ class TestArgs:
     startAt: str
     sanityCheck: bool
 
+def copyTemplate(studentDir: str, studentId: str, path: str):
+    (b, e) = shell.splitExt(shell.basename(path))
+    for t in ['_TEMPLATE_', 'TEMPLATE_', '_TEMPLATE', 'TEMPLATE']:
+        b = b.replace(t, '')
+    b = b + '_' + studentId
+    newPath = shell.pjoin(studentDir, b) + e
+    if not shell.isFile(newPath):
+        note(f"Copying template {path} to {newPath}")
+        shell.cp(path, newPath)
+        spreadsheet.replaceData(newPath, 'ID', 'STUDENT_ID', studentId)
+    return newPath
+
+def getSpreadsheet(studentDir: str, studentId: str, assignment: Assignment):
+    templatePath = assignment.spreadsheetTemplatePath
+    if templatePath:
+        p = copyTemplate(studentDir, studentId, templatePath)
+        return (p, assignment.spreadsheetTemplateAssignmentResultSheet)
+    else:
+        return (assignment.spreadsheetPath, assignment.spreadsheetAssignmentResultSheet)
+
 class Context:
     def __init__(self, cfg: Config, args: TestArgs):
         self.cfg = cfg
         self.args = args
         self.acc = None
         self.failed = None # None means unknown, True definitive failure and False definitive success
-    def storeTestResultInSpreadsheet(self, studentDir: str, testId: str, suffixes: Union[str, list[str]], result: any):
+    def storeTestResultInSpreadsheet(self, studentDir: str, assignment: Assignment,
+            testId: str, suffixes: Union[str, list[str]], result: any):
         if type(suffixes) == str:
             suffixes = [suffixes]
-        path = self.cfg.spreadsheetPath
+        (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
+        id = id.strip()
+        (path, sheet) = getSpreadsheet(studentDir, id, assignment)
         if not shell.isFile(path):
             print(red(f'No spreadsheet at {path}, continuing without storing results'))
             return
-        (name, id) = utils.parseSubmissionDir(self.cfg, studentDir)
-        id = id.strip()
         resultColTitle = testId
         if suffixes:
             resultColTitle = f'{resultColTitle} {" ".join(suffixes)}'
         try:
             spreadsheet.enterData(path, 'ID', [f"Teilnehmer/in{id}", id], resultColTitle, result,
-                sheetName=self.cfg.spreadsheetAssignmentResultSheet)
+                sheetName=sheet)
             print(f'Stored test result "{result}" for "{name}" ({id}) in column "{resultColTitle}" at {path}')
         except ValueError as e:
             print(f"ERROR storing test result in spreadsheet: {e}")
