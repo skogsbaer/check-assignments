@@ -40,11 +40,11 @@ def _runPythonTest(ctx, studentDir: str, assignment: Assignment, testId: str, te
         args = ['--test-file', testFile, '--check', mainFile]
     else:
         args = ['--check', mainFile]
-    tee = shell.createTee([shell.TEE_STDOUT, logFile])
     runArgs = progArgs + args
     verbose(f'Running {runArgs}')
-    result = shell.run(runArgs, onError='ignore', stderrToStdout=True, captureStdout=tee,
-                       env={'PYTHONPATH': f'{wyppDir}/python/site-lib'})
+    with shell.createTee([shell.TEE_STDOUT, logFile]) as tee:
+        result = shell.run(runArgs, onError='ignore', stderrToStdout=True, captureStdout=tee,
+                           env={'PYTHONPATH': f'{wyppDir}/python/site-lib'})
     if result.exitcode == 0:
         print(green(f'Test {testId} OK'))
         spreadsheetResult = 1

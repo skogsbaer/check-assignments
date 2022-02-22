@@ -11,9 +11,9 @@ def saveExcelSpreadsheet(path: str, wb):
         wb.save(fp.name)
         os.rename(fp.name, path) # Atomic move
 
-def openSheet(path: str, sheetName: Optional[str]):
+def openSheet(path: str, sheetName: Optional[str], dataOnly=False):
     import openpyxl as exc
-    wb = exc.load_workbook(filename=path)
+    wb = exc.load_workbook(filename=path, data_only=dataOnly)
     if sheetName:
         sheet = wb[sheetName]
     else:
@@ -52,7 +52,7 @@ def findRowIndex(sheet, title: Union[str, list[str]]) -> list[int]:
     return ixs
 
 def getDataFromRow(path: str, sheetName: str, rowTitle: Union[str, list[str]]):
-    (_wb, sheet) = openSheet(path, sheetName)
+    (_wb, sheet) = openSheet(path, sheetName, dataOnly=True)
     ixs = findRowIndex(sheet, rowTitle)
     if len(ixs) != 1:
         raise ValueError("Sheet {sheetName} of spreadsheet {path} has more than one row with " \
@@ -64,10 +64,14 @@ def getDataFromRow(path: str, sheetName: str, rowTitle: Union[str, list[str]]):
             return v
     return None
 
-def replaceData(path: str, colTitle: str, oldValue: str, newValue: str,
-    sheetName: Optional[str] = None):
+def replaceData(path: str, colTitle: str, oldValue: str, newValue: str, sheetName: Optional[str] = None):
     (wb, sheet) = openSheet(path, sheetName)
-    idx = findColumnIndex(sheet, colTitle)
+    idxs = findColumnIndex(sheet, colTitle)
+    if not idxs:
+        raise ValueError(f"No column found with title {colTitle}")
+    if len(idxs) > 1:
+        raise ValueError(f"More than one column found with title {colTitle}")
+    idx = idxs[0]
     for row in range(1, sheet.max_row + 1):
         v = cellValue(sheet, column=idx, row=row)
         if v:
