@@ -103,7 +103,7 @@ def moveToBackup(path):
         if not shell.exists(backupName):
             shell.mv(path, backupName)
             return
-    raise ValueError(f"tpp many backups for {path}")
+    raise ValueError(f"too many backups for {path}")
 
 def copyIntoStudentDir(assignment: Assignment, studentDir: str):
     for src in assignment.itemsToCopy:

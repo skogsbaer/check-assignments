@@ -4,9 +4,9 @@ from config import Assignment
 from typing import Literal
 from ansi import *
 
-testKindStudent = 'ST'
-testKindTutor = 'TT'
-TestKind = Literal['ST', 'TT']
+testKindStudent = 'S'
+testKindTutor = 'T'
+TestKind = Literal['S', 'T']
 
 # Runs a custom test script. The test script is named
 # "run-student-tests.sh" (for student tests) or "run-tests.sh"

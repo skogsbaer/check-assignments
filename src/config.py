@@ -188,7 +188,7 @@ class Assignment:
     def itemsToCopy(self):
         return getAsList(self.dicts, 'copy')
     def studentOutputFile(self, studentDir):
-        return shell.pjoin(studentDir, f'OUTPUT_student_{str(self.id)}.txt')
+        return shell.pjoin(studentDir, f'OUTPUT_{str(self.id)}_student.txt')
     def getMainFile(self, d, fail=False):
         return self._getFile(Keys.mainFile, d, fail)
     def dir(self, d):

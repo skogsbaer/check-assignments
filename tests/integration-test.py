@@ -68,7 +68,7 @@ with shell.tempDir(onException=False) as tmp:
         assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_2.txt'))
         assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_3.txt'))
         assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_4_A.txt'))
-        assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_student_4.txt'))
+        assertFileNotEmpty(shell.pjoin(barFoo, 'OUTPUT_4_student.txt'))
 
         assertFileContains(logFile, "Test 1 FAILED")
         assertFileContains(logFile, "AssertionError: 41 != 42")
@@ -89,12 +89,14 @@ with shell.tempDir(onException=False) as tmp:
         rows = list(ws.rows)
         titleRow = [c.value for c in rows[0]]
         try:
-            ix = titleRow.index('1 TT')
+            ix = titleRow.index('1 SC')
         except ValueError:
-            abort('Column "1 TT" not found in rating.xlsx')
+            abort(f'Column "1 SC" not found in rating.xlsx, first row: {titleRow}')
         valueRow = [c.value for c in rows[1]]
-        expected = [('1 TT', 0), ('2 SC', 1), ('2 ST', 0), ('2 C', 1), ('2 T', 0),
-            ('3 SC', 1), ('3 ST', 0), ('4 ST', 1), ('4_A TT', 0)]
+        expected = [('1 SC', 1), ('1 ST', -1), ('1 C', 1), ('1 T', -1),
+            ('2 SC', 1), ('2 ST', 0), ('2 C', 1), ('2 T', 0),
+            ('3 SC', 1), ('3 ST', 0),
+            ('4 ST', 1), ('4_A TT', 0)]
         end = ix + len(expected) + 1
         titles = titleRow[ix:end]
         values = valueRow[ix:end]

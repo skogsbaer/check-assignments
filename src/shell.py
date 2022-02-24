@@ -29,6 +29,8 @@ try:
 except:
     DEV_NULL = open('nul')
 
+atexit.register(lambda: DEV_NULL.close())
+
 def debug(s):
     if PYSHELL_DEBUG:
         sys.stderr.write('[DEBUG] ' + str(s) + '\n')

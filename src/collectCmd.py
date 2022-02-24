@@ -13,14 +13,14 @@ def collect(cfg: Config, targetFile: str):
                 print(red(f"No spreadsheet found for {name}"))
             else:
                 titles = [f'A{a.id} TOTAL', f'Aufgabe {a.id} TOTAL']
-                p = spreadsheet.getDataFromRow(path, sheet, titles)
+                p = spreadsheet.getFirstDataFromRow(path, sheet, titles)
                 if p is None:
                     p = 0
                 if p in [0, '0']:
-                    done = spreadsheet.getDataFromRow(path, sheet, ['Korrigiert?', 'korrigiert?'])
+                    done = spreadsheet.getFirstDataFromRow(path, sheet, ['Korrigiert?', 'korrigiert?'])
                     if done is not None and done.lower() in ['ja', 'yes', 'ok']:
                         pass
                     else:
-                        raise ValueError(f"No grading found in {path}")
+                        print(red(f"No grading found in {path}"))
                 spreadsheet.enterData(targetFile, ['Login', 'Matrikel'], id,
                     f"A{a.id}", p, 'Ergebnis')
