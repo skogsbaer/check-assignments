@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import csv
 from exportCmd import RATING_COL, NAME_COL, STATUS_COL
 import string
-import spreadsheet
+import spreadsheet_lib
 
 @dataclass
 class ImportArgs:
@@ -101,4 +101,4 @@ def importCmd(cfg, args):
     ws = wb.active
     for r in newRows:
         ws.append(r)
-    spreadsheet.saveExcelSpreadsheet(cfg.spreadsheetPath, wb)
+    spreadsheet_lib.saveBook(wb, cfg.spreadsheetPath)
