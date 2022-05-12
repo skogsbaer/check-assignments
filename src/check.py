@@ -56,6 +56,10 @@ def parseArgs():
     jplag = subparsers.add_parser('jplag', help='Detect plagiarism via jplag')
     jplag.add_argument('--mode', metavar='M', type=str, required=True,
                        help='Either "merged" (checks all files at once) or "separate" (checks each file individually)')
+    jplag.add_argument('--minScore', metavar='S', type=int, default=95,
+                       help='Minimum score for which similarities are reported on the commandline (0-100, default 95)')
+    jplag.add_argument('--printDiff',  action='store_true', default=False,
+                       help='Print diff if score is 100%')
     unzip = subparsers.add_parser('unzip', help='Unzip all files downloaded from moodle')
     addComment = subparsers.add_parser('addComment', help='Add a file COMMENTS.txt to all student directories')
     runTests = subparsers.add_parser('runTests', help='Run the tests, do interactive grading')
@@ -143,7 +147,7 @@ def main():
     elif args.cmd == 'export':
         exportCmd.export(config)
     elif args.cmd == 'jplag':
-        a = jplagCmd.JplagArgs(args.mode)
+        a = jplagCmd.JplagArgs(args.mode, args.minScore, args.printDiff)
         jplagCmd.jplag(config, a)
     elif args.cmd == 'fixEncoding':
         fixEncodingCmd.fixEncoding(config)
