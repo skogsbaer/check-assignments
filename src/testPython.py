@@ -20,7 +20,7 @@ class Result:
     def ok(self):
         return self.testsFailed == 0 and not self.runError
     @staticmethod
-    def parseResult(prefix: str, s: str):
+    def __parseWyppResult(prefix: str, s: str):
         runError = 'Traceback (most recent call last):' in s
         r1 = re.compile(f'^{prefix}' + r'\s*(\d+) Tests, (\d+) Fehler')
         r2 = re.compile(f'^{prefix}' + r'\s*(\d+) Tests, alle erfolgreich')
@@ -34,6 +34,43 @@ class Result:
             if m2:
                 total = int(m2.group(1))
                 return Result(runError, total, 0)
+    @staticmethod
+    def __parseUnitResult(prefix: str, s: str):
+        # Ran 3 tests in 0.000s
+        # FAILED (errors=1)
+        # FAILED (failures=1, errors=1)
+        # OK
+        total = -1
+        errors = 0
+        failures = 0
+        skipped = 0
+        r = re.compile('^Ran (\\d+) test')
+        def getKv(l, k):
+            r = re.compile(f'{k}=(\\d+)')
+            m = r.search(l)
+            if m:
+                return int(m.group(1))
+            else:
+                return 0
+        for l in s.split('\n'):
+            l = l.strip()
+            m = r.match(l)
+            if m:
+                total = int(m.group(1))
+            if l.startswith('FAILED'):
+                errors = getKv(l, 'errors')
+                failures = getKv(l, 'failures')
+                skipped = getKv(l, 'skipped')
+        if total > 0:
+            return Result(False, total - skipped, errors + failures)
+    def parseResult(prefix: str, s: str):
+        r = Result.__parseWyppResult(prefix, s)
+        if r:
+            return r
+        r = Result.__parseUnitResult(prefix, s)
+        if r:
+            return r
+        runError = 'Traceback (most recent call last):' in s
         return Result(runError, 0, 0)
 
 def runPythonTests(ctx, studentDir: str, assignment: Assignment):

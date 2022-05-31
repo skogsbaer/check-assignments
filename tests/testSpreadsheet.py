@@ -30,6 +30,7 @@ class SpreadsheetTest(unittest.TestCase):
         )
         self.assertEqual(3, x)
 
+    @unittest.skip("opens excel")
     def test_getFirstData(self):
         self.getFirstData('openpyxl')
         self.getFirstData('xlwings')
@@ -43,6 +44,7 @@ class SpreadsheetTest(unittest.TestCase):
             sheetName=sheetName
         )
 
+    @unittest.skip("opens excel")
     def test_replaceData(self):
         self.replaceData('openpyxl')
 
@@ -55,5 +57,6 @@ class SpreadsheetTest(unittest.TestCase):
             sheetName=sheetName
         )
 
+    @unittest.skip("opens excel")
     def test_enterData(self):
         self.enterData('openpyxl')

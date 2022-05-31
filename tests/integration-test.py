@@ -93,7 +93,7 @@ with shell.tempDir(onException=False) as tmp:
         except ValueError:
             abort(f'Column "1 SC" not found in rating.xlsx, first row: {titleRow}')
         valueRow = [c.value for c in rows[1]]
-        expected = [('1 SC', 1), ('1 ST', -1), ('1 C', 1), ('1 T', -1),
+        expected = [('1 SC', 1), ('1 ST', -1), ('1 C', 1), ('1 T', 0),
             ('2 SC', 1), ('2 ST', 0), ('2 C', 1), ('2 T', 0),
             ('3 SC', 1), ('3 ST', 0),
             ('4 ST', 1), ('4_A TT', 0)]
