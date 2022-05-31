@@ -17,6 +17,12 @@ def abort(msg):
     sys.stderr.write(msg + '\n')
     sys.exit(1)
 
+def assertDirExists(path):
+    if not shell.isDir(path):
+        d = shell.dirname(path)
+        files = shell.ls(d, '*')
+        abort(f'File {path} does not exist, existing files: {files}')
+
 def assertExists(path):
     if not shell.isFile(path):
         d = shell.dirname(path)
@@ -106,7 +112,19 @@ with shell.tempDir(onException=False) as tmp:
         )
 
         # plagiarism
-        # todo
+        jplagLog = shell.pjoin(tmp, "jplag-log.txt")
+        shell.cp('Bar Foo_1234_assignsubmission_file_', 'Spam Egg_5678_assignsubmission_file')
+        shell.run(f'{checkAssignments} jplag --mode separate --printDiff --minScore 100 | tee {jplagLog}')
+        assertFileContains(jplagLog, "File assignment_01.py is identical in Bar Foo_1234_assignsubmission_file_ and Spam Egg_5678_assignsubmission_file")
+        assertDirExists('jplag-results/python')
+        shell.rmdir('jplag-results', True)
+        shell.rm(jplagLog)
+
+        shell.run(f'{checkAssignments} jplag --mode merged --printDiff --minScore 100 | tee {jplagLog}')
+        assertDirExists('jplag-results/python')
+        assertDirExists('jplag-results/java')
+        assertFileContains(jplagLog, "File assignment_01.py is identical in Bar Foo_1234_assignsubmission_file_ and Spam Egg_5678_assignsubmission_file")
+        assertFileContains(jplagLog, 'File src/assignment_02/MyClass.java is identical in Bar Foo_1234_assignsubmission_file_ and Spam Egg_5678_assignsubmission_file')
 
         print('### export ###')
         shell.run([checkAssignments, 'export'])

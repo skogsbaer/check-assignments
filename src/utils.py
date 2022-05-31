@@ -76,6 +76,15 @@ def stripSlashes(x):
     else:
         return x
 
+def stripLeading(x, prefix):
+    if not x:
+        return x
+    x = x.strip()
+    if x.startswith(prefix):
+        return x[len(prefix):]
+    else:
+        return x
+
 def hasSameContent(f1, f2):
     c1 = readBinaryFile(f1)
     c2 = readBinaryFile(f2)

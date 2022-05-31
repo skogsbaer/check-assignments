@@ -54,12 +54,13 @@ def parseArgs():
     checkPlagiarism.add_argument('--ignore', metavar='FILES', type=str, required=False,
                                  help='Ignore these assignment files when checking plagiarism')
     jplag = subparsers.add_parser('jplag', help='Detect plagiarism via jplag')
-    jplag.add_argument('--mode', metavar='M', type=str, required=True,
-                       help='Either "merged" (checks all files at once) or "separate" (checks each file individually)')
+    jplag.add_argument('--mode', metavar='M', type=str, default='separate',
+                       help='Either "merged" (checks all files at once) or "separate" (checks each file individually, the default, ' + \
+                           'requires a main-file for the assignments to be checked)')
     jplag.add_argument('--minScore', metavar='S', type=int, default=95,
                        help='Minimum score for which similarities are reported on the commandline (0-100, default 95)')
     jplag.add_argument('--printDiff',  action='store_true', default=False,
-                       help='Print diff if score is 100%')
+                       help='Print diff if score is 100%%')
     unzip = subparsers.add_parser('unzip', help='Unzip all files downloaded from moodle')
     addComment = subparsers.add_parser('addComment', help='Add a file COMMENTS.txt to all student directories')
     runTests = subparsers.add_parser('runTests', help='Run the tests, do interactive grading')
