@@ -315,8 +315,10 @@ def cp(src, target):
             name = basename(src)
             targetDir = pjoin(target, name)
             return shutil.copytree(src, targetDir)
-        else:
+        elif exists(target):
             raise ValueError(f'Cannot copy directory {src} to non-directory {target}')
+        else:
+            return shutil.copytree(src, target)
 
 def abort(msg):
     sys.stderr.write('ERROR: ' + msg + '\n')
