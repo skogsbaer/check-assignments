@@ -73,6 +73,9 @@ def parseArgs():
     runTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
     runTests.add_argument('--sanityCheck', help='Only perform sanity checks on submission, do not run tests',
                           action='store_true', default=False)
+    runTests.add_argument('--openSpreadsheet',
+                          help='Automatically open the grading spreadsheet (only with "--interactive assignment")',
+                          action='store_true', default=False)
     grade = subparsers.add_parser('grade', help='Grading')
     grade.add_argument('dirs', metavar='DIR', type=str, nargs='*',
                        help='The student directories to run the tests for.')
@@ -136,7 +139,8 @@ def main():
             assignments,
             args.interactive,
             stripSlashes(args.startAt),
-            args.sanityCheck)
+            args.sanityCheck,
+            args.openSpreadsheet)
         testCmd.runTests(config, a)
     elif args.cmd == 'grade':
         if args.assignments:

@@ -24,6 +24,7 @@ class TestArgs:
     interactive: bool
     startAt: str
     sanityCheck: bool
+    openSpreadsheet: bool
 
 class Context:
     def __init__(self, cfg: Config, args: TestArgs):
@@ -123,11 +124,19 @@ def runTestsForAssignment(ctx, studentDir, assignment):
     else:
         abort(f"Don't know how to run tests for assignment kind {k}")
 
+def openSpreadsheet(cfg: Config, studentDir: str, assignment: Assignment):
+    (_name, id) = utils.parseSubmissionDir(cfg, studentDir)
+    (path, _sheet) = gradeCmd.getSpreadsheet(studentDir, id, assignment)
+    shell.run(['open', path])
+    print(f'Opened grading spreadsheet at {path}')
+
 def interactiveLoopAssignment(ctx, studentDir, a):
     runTestsForAssignment(ctx, studentDir, a)
     if ctx.args.interactive == 'assignment':
         while True:
             print()
+            if ctx.args.openSpreadsheet:
+                openSpreadsheet(ctx.cfg, studentDir, a)
             print(blue(f'Just checked assignment {a.id} for student {prettyStudent(ctx.cfg, studentDir)}'))
             mainFile = a.getMainFile(studentDir)
             cmd = readCommand(ctx.cfg, ctx.args, mainFile)
