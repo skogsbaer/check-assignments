@@ -69,6 +69,12 @@ The assignments are configured in the file `check.yml`. See
 [test-data/submissions/check.yml](test-data/submissions/check.yml)
 for an example.
 
+## Variable expansion
+
+In strings of yaml-values, you might refer to the value of a top-level defined variables `V`
+as `${V}`. The special variables `${N}` and `${NN}` refer to the ID of an
+assignment (unpadded and zero-padded).
+
 ## Top-level keys
 
 * `test-dir`: directory for test files, default to `tests` inside the root directory.
@@ -88,15 +94,16 @@ For each assignment, you have the following options available.
 
 * `test-filter`: a package name with wildcards. The value of this key can be used
 as `${testFilter}` in the `build.gradle` file.
+* `java-simple`: `true` if java-simple be in the classpath.
 
 ### Keys for `kind: "python"`
 
 * `main-file`: the main file the student is expected to submit
 * `test-file`: file inside `tests` with tests provided by the teaching staff.
 
-### Value lookup
+## Default Values
 
-Note: you can also place assignment-specific key-value pairs at the top-level.
+You can also place assignment-specific key-value pairs at the top-level.
 The values than act as a default to the key.
 
 ## Checking Java code
@@ -120,3 +127,10 @@ You can supply your tests either via WYPP's check function
 or you can write regular unittests. See
 [test-data/submissions/tests/Test-01.py](test-data/submissions/tests/Test-01.py)
 for an example.
+
+Regular unittests should include the following code snippet at the end:
+
+```python
+if __name__ == '__wypp__':
+    unittest.main()
+```
