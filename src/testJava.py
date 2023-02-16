@@ -61,7 +61,18 @@ def _runJavaTest(ctx, studentDir: str, codeDir: str, assignment: Assignment, tes
     for k, v in gradleProps.items():
         gradlePropArgs.append(f'-P{k}={v}')
     print()
-    print(blue(f"Starting test {testId}"))
+    what = ''
+    if hasTests:
+        if isStudent:
+            what = 'student test'
+        else:
+            what = 'tutor test'
+    else:
+        if isStudent:
+            what = 'student build'
+        else:
+            what = 'tutor build'
+    print(blue(f"Starting {what} {testId}"))
     with shell.workingDir(cfg.baseDir):
         if not shell.isFile('build.gradle'):
             abort(f'No build.gradle file in {cfg.baseDir}, aborting')
@@ -76,9 +87,9 @@ def _runJavaTest(ctx, studentDir: str, codeDir: str, assignment: Assignment, tes
             result = shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=tee)
         output = open(logFileName, 'r').read()
     if result.exitcode == 0:
-        print(green(f'Test {testId} OK'))
+        print(green(f'{firstUpper(what)} {testId} OK'))
     else:
-        print(red(f'Test {testId} FAILED, see above'))
+        print(red(f'{firstUpper(what)} {testId} FAILED, see above'))
     result = Result.parseResult(output)
     prefix = 'S' if isStudent else ''
     ctx.storeTestResultInSpreadsheet(studentDir, assignment, testId, [prefix + 'C'],

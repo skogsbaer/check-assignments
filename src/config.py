@@ -13,7 +13,7 @@ def getFromDicts(dicts, k, conv=lambda x: x, default=None, fail=True):
         dicts = [dicts]
     val = None
     for i, d in enumerate(dicts):
-        if k in d:
+        if d is not None and k in d:
             val = d[k]
             break
     else:
@@ -49,6 +49,7 @@ class Keys:
     testFiles = 'test-files'
     testFilter = 'test-filter'
     testFilters = 'test-filters'
+    javaSimple = 'java-simple'
 
 def defaultTestDir(baseDir):
     return shell.pjoin(baseDir, 'tests')
@@ -157,6 +158,7 @@ class Assignment:
             raise TypeError("Assignment.id must be an int")
     @staticmethod
     def parse(baseDir, id, dicts):
+        dicts = expandVars(dicts, {'N': str(id), 'NN': str(id).zfill(2)})
         points = getFromDicts(dicts, Keys.points, int)
         kind = getFromDicts(dicts, Keys.kind)
         tests = getFromDicts(dicts, Keys.tests, default={}, fail=False)

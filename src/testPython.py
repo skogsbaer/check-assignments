@@ -99,6 +99,8 @@ def _runPythonTest(ctx, studentDir: str, assignment: Assignment, testId: str, te
     if not shell.isDir(wyppDir):
         abort(f'Directory {wyppDir} does not exist.')
     progArgs = [
+        'timeout',
+        '15',
         sys.executable,
         shell.pjoin(wyppDir, 'python/src/runYourProgram.py')
     ]
@@ -109,10 +111,12 @@ def _runPythonTest(ctx, studentDir: str, assignment: Assignment, testId: str, te
     runArgs = progArgs + args
     verbose(f'Running {runArgs}')
     with shell.createTee([shell.TEE_STDOUT, logFile]) as tee:
-        shell.run(runArgs, onError='ignore', stderrToStdout=True, captureStdout=tee,
+        runRes = shell.run(runArgs, onError='ignore', stderrToStdout=True, captureStdout=tee,
                            env={'PYTHONPATH': f'{wyppDir}/python/site-lib'})
     output = utils.readFile(logFile)
     result = Result.parseResult('' if testKind == testKindStudent else 'Tutor:', output)
+    if runRes.exitcode == 124:
+        print(red(f'Test {testId} timeout'))
     if result.ok:
         print(green(f'Test {testId} OK'))
     else:

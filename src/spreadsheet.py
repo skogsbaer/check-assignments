@@ -34,7 +34,7 @@ def getFirstDataFromRow(path: str, sheetName: str, rowTitle: Union[str, list[str
     with load(path, sheetName, spreadsheetKind, dataOnly=True) as sheet:
         row = findRowIndex(sheet, rowTitle)
         if row is None:
-            raise ValueError("Sheet {sheetName} of spreadsheet {path} has no row with " \
+            raise ValueError(f"Sheet {sheetName} of spreadsheet {path} has no row with " \
                 f"titles {rowTitle}")
         for col in sheet.colIndices(start=1):
             v = sheet.value(col=col, row=row)
@@ -61,8 +61,10 @@ def replaceData(path: str, colTitle: str, oldValue: str, newValue: str,
                     sheet.setValue(col=idx, row=row, value=newValue)
         sheet.save(path)
 
-def enterData(path: str,
-    idColumn: str | list[str], idValue: Union[str, list[str]],
+def enterData(
+    path: str,
+    idColumn: str | list[str],
+    idValue: Union[str, list[str]],
     dataColumn: str, data: str,
     sheetName: Optional[str] = None,
     spreadsheetKind: SpreadsheetKind = 'openpyxl'):
@@ -122,3 +124,18 @@ def enterData(path: str,
         verbose(f'Storing {data} at col={dataColumnIx}, row={rowIx} in {path} (sheet: {sheetName})')
         sheet.setValue(col=dataColumnIx, row=rowIx, value=data)
         sheet.save(path)
+        return f'{resolveColIndex(dataColumnIx)}{rowIx+1}'
+
+COLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+def resolveColIndex(i):
+    n = len(COLS)
+    if i < n:
+        return COLS[i]
+    else:
+        x = (i // n) - 1
+        y = i % n
+        if x >= n or y >= n:
+            return '??'
+        else:
+            return COLS[x] + COLS[y]

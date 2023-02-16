@@ -60,17 +60,7 @@ def getSpreadsheet(studentDir: str, studentId: str, assignment: Assignment, copy
 def forEach(cfg: Config, args, action):
     dirs = args.dirs
     if not dirs:
-        dirs = collectSubmissionDirs(cfg)
-    dirs = sorted(dirs)
-    verbose(f"Submission directories: {dirs}")
-    if args.startAt:
-        l = dirs
-        dirs = []
-        for x in l:
-            if shell.basename(x) >= args.startAt:
-                dirs.append(x)
-            else:
-                print(f'Skipping {x} as requested')
+        dirs = collectSubmissionDirs(cfg, startAt=args.startAt)
     for d in dirs:
         assignments = cfg.assignments
         if args.assignments:
@@ -108,7 +98,13 @@ def doGrade(cfg, args, studentDir, assignments):
             (path, _sheet) = getSpreadsheet(studentDir, id, a)
             shell.run(['open', path])
             m = a.getMainFile(studentDir)
-            shell.run([cfg.editor, m])
+            if m:
+                cmdList = ['code', '--new-window', '--wait', '--goto', m, studentDir]
+                shell.run(cmdList)
+            else:
+                print(f'No main file found for assignment {a.id}')
+                cmdList = ['code', '--new-window', '--wait', studentDir]
+                shell.run(cmdList)
         print(blue(f'Just graded all assignments for student {prettyStudent(cfg, studentDir)}'))
         cmd = readCommand(cfg, args, None)
         if cmd == CONTINUE_COMMAND:

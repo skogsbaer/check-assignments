@@ -2,6 +2,7 @@ import shell
 import os
 import zipfile
 import shutil
+from ownLogging import *
 
 def readBinaryFile(name):
     with open(name, 'rb') as f:
@@ -19,14 +20,25 @@ def writeBinaryFile(name, content):
     with open(name, 'wb') as f:
         f.write(content)
 
-def collectSubmissionDirs(config, baseDir=None):
+def collectSubmissionDirs(config, baseDir=None, startAt=None):
     if baseDir is None:
         baseDir = config.baseDir
     result = []
     for x in shell.ls(baseDir, '*'):
         if shell.isDir(x) and config.isSubmissionDir(shell.basename(x)):
             result.append(x)
-    return sorted(result)
+    result = sorted(result)
+    verbose(f"Submission directories: {result}")
+    if startAt:
+        startAt = startAt.rstrip().rstrip('/').lstrip().lstrip('./')
+        dirs = []
+        for x in result:
+            if shell.basename(x) >= startAt:
+                dirs.append(x)
+            else:
+                print(f'Skipping {x} as requested')
+        result = dirs
+    return result
 
 def collectSubmissionFiles(config, d):
     globs = set([a.submissionFileGlob for a in config.assignments])
@@ -171,3 +183,8 @@ def withLimitedDir(sourceDir, subdirs, action):
             shutil.copytree(shell.pjoin(sourceDir, sub), target, dirs_exist_ok=True)
         action(tmp)
 
+def firstUpper(s: str) -> str:
+    if s:
+        return s[0].upper() + s[1:]
+    else:
+        return s

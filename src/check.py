@@ -48,6 +48,7 @@ def parseArgs():
     subparsers = parser.add_subparsers(help='Commands', dest='cmd')
     checkFilenames = subparsers.add_parser('checkFilenames', help='Check that all solutions are placed in the right files')
     fixFilenames = subparsers.add_parser('fixFilenames', help='Try to fix the names of the solution files')
+    fixFilenames.add_argument('--moveUp', help='Move contents if a single directory one level up', action='store_true', default=False)
     checkPlagiarism = subparsers.add_parser('checkPlagiarism', help='Run a check against plagiarism')
     checkPlagiarism.add_argument('--threshold', metavar='N', type=int, required=True,
                                  help='Similarity in percentage when two files are considered equal in the sense of plagiarism')
@@ -76,7 +77,7 @@ def parseArgs():
     runTests.add_argument('--openSpreadsheet',
                           help='Automatically open the grading spreadsheet (only with "--interactive assignment")',
                           action='store_true', default=False)
-    grade = subparsers.add_parser('grade', help='Grading')
+    grade = subparsers.add_parser('grade', help='Grading for exams')
     grade.add_argument('dirs', metavar='DIR', type=str, nargs='*',
                        help='The student directories to run the tests for.')
     grade.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
@@ -90,6 +91,8 @@ def parseArgs():
     fixEnc = subparsers.add_parser('fixEncoding', help='Fix encoding of source files.')
     collect = subparsers.add_parser('collect', help='Colllect credits for assignment and store in spreadsheet')
     collect.add_argument('file', metavar='EXCEL_FILE', type=str, help='The spreadsheet where credits should be stored')
+    collect.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
+    collect.add_argument('--sheet-name', default='Ergebnis', help='Name of the sheet in the spreadsheet')
     return parser.parse_args()
 
 def main():
@@ -117,7 +120,8 @@ def main():
         a = plagiarismCmd.PlagiarismArgs(args.threshold, args.ignore, VERBOSE)
         plagiarismCmd.checkPlagiarism(config, a)
     elif args.cmd == 'fixFilenames':
-        filenamesCmd.fixFilenames(config)
+        fixArgs = filenamesCmd.FixFilenamesArgs(args.moveUp)
+        filenamesCmd.fixFilenames(config, fixArgs)
     elif args.cmd == 'import':
         importArgs = importCmd.ImportArgs(args.file)
         importCmd.importCmd(config, importArgs)
@@ -157,7 +161,8 @@ def main():
     elif args.cmd == 'fixEncoding':
         fixEncodingCmd.fixEncoding(config)
     elif args.cmd == 'collect':
-        collectCmd.collect(config, args.file)
+        a = collectCmd.CollectArgs(args.startAt, args.file, args.sheet_name)
+        collectCmd.collect(config, a)
     else:
         warn('Unknown command: ' + args.cmd)
 

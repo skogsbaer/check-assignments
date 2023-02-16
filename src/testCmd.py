@@ -45,9 +45,9 @@ class Context:
         if suffixes:
             resultColTitle = f'{resultColTitle} {" ".join(suffixes)}'
         try:
-            spreadsheet.enterData(path, 'ID', [f"Teilnehmer/in{id}", id], resultColTitle, result,
+            cell = spreadsheet.enterData(path, 'ID', [f"Teilnehmer/in{id}", id], resultColTitle, result,
                 sheetName=sheet)
-            print(f'Stored test result "{result}" for "{name}" ({id}) in column "{resultColTitle}" at {path}')
+            print(f'Stored test result "{result}" for "{name}" ({id}) in column "{resultColTitle}" at {path}. Cell: {cell}')
         except ValueError as e:
             print(f"ERROR storing test result in spreadsheet: {e}")
 
@@ -114,7 +114,7 @@ def copyIntoStudentDir(assignment: Assignment, studentDir: str):
             moveToBackup(target)
             shell.cp(src, studentDir)
 
-def runTestsForAssignment(ctx, studentDir, assignment):
+def runTestsForAssignment(ctx, studentDir, assignment: Assignment):
     copyIntoStudentDir(assignment, studentDir)
     print(blue(f'Checking assignment {assignment.id} for student {prettyStudent(ctx.cfg, studentDir)}'))
     k = assignment.kind
