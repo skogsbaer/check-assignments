@@ -169,7 +169,7 @@ def interactiveLoopStudent(cfg, args, studentDir, assignments):
 def runTests(cfg, args):
     failures = []
     success = []
-    def action(d, assignments):
+    def action(d, assignments, total, i):
         failed = interactiveLoopStudent(cfg, args, d, assignments)
         if failed is True:
             failures.append(d)

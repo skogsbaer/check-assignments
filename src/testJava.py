@@ -7,6 +7,7 @@ from config import Config, Assignment
 from dataclasses import dataclass
 import re
 from typing import *
+import time
 
 testPassRegex = re.compile('> .* PASSED')
 testFailRegex = re.compile('> .* FAIL')
@@ -17,6 +18,7 @@ class Result:
     runError: bool
     testsTotal: int
     testsFailed: int
+    output: str
 
     def ratio(self):
         if self.testsTotal == 0:
@@ -26,10 +28,10 @@ class Result:
     @staticmethod
     def parseResult(s: str):
         compileError = (':compileTestJava FAILED') in s or (':compileJava FAILED' in s)
-        runError = (':run FAILED') in s or (':run FAILED' in s)
+        runError = (':run FAILED') in s
         nPass = len(testPassRegex.findall(s))
         nFail = len(testFailRegex.findall(s))
-        return Result(compileError, runError, nPass + nFail, nFail)
+        return Result(compileError, runError, nPass + nFail, nFail, s)
 
 def runJavaTests(ctx, studentDir: str, assignment: Assignment):
     d = assignment.dir('.')
@@ -60,21 +62,31 @@ def hasUnitTests(d):
             return True
     return False
 
+def appendOutputToFile(path, timestamp, s):
+    with open(path, 'a') as f:
+        f.write(f'\n\n/* OUTPUT {timestamp}\n\n{s}\n*/\n')
+
 def _runJavaTests(ctx, studentDir: str, codeDir: str, assignment: Assignment):
     logFileName = shell.pjoin(studentDir, f'OUTPUT_{assignment.id}.txt')
     shell.rm(logFileName)
+    timestamp = time.ctime()
+    shell.writeFile(f"RUN: {timestamp}\n\n")
     noMainClass = "NOT_EXISTING_CLASS"
-    _runJavaTest(ctx, studentDir, codeDir, assignment, logFileName,
+    # compile code
+    compileResult = _runJavaTest(ctx, studentDir, codeDir, assignment, logFileName,
         testId=str(assignment.id),
         testDir="NOT_EXISTING_TEST_DIR",
         testFilter=None, kind='compile', mainClass=noMainClass, isStudent=True)
+    if compileResult.compileError:
+        return
     m = assignment.getMainFile(codeDir)
     if m:
         mainClass = getClassFromFile(m)
-        _runJavaTest(ctx, studentDir, codeDir, assignment, logFileName,
+        runResult = _runJavaTest(ctx, studentDir, codeDir, assignment, logFileName,
             testId=str(assignment.id),
             testDir="NOT_EXISTING_TEST_DIR",
             testFilter=None, kind='run', mainClass=mainClass, isStudent=True)
+        appendOutputToFile(m, timestamp, runResult.output)
     if hasUnitTests(codeDir):
         _runJavaTest(ctx, studentDir, codeDir, assignment, logFileName,
             testId=str(assignment.id),
@@ -116,6 +128,7 @@ def _runJavaTest(ctx, studentDir: str, codeDir: str, assignment: Assignment, log
         else:
             what = 'tutor build'
     print(blue(f"Starting {what} {testId}"))
+    myLog = '/tmp/check-assignments-java.log'
     with shell.workingDir(cfg.baseDir):
         if not shell.isFile('build.gradle'):
             abort(f'No build.gradle file in {cfg.baseDir}, aborting')
@@ -127,9 +140,9 @@ def _runJavaTest(ctx, studentDir: str, codeDir: str, assignment: Assignment, log
             gradleCmd = 'compileJava'
         cmd = [cfg.gradlePath] + gradlePropArgs + [gradleCmd, '--rerun-tasks']
         print(f'Executing {" ".join(cmd)}')
-        with shell.createTee([shell.TEE_STDOUT, (logFileName, 'a')]) as tee:
+        with shell.createTee([shell.TEE_STDOUT, (logFileName, 'a'), myLog]) as tee:
             result = shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=tee)
-        output = open(logFileName, 'r').read()
+        output = open(myLog, 'r').read()
     if result.exitcode == 0:
         print(green(f'{firstUpper(what)} {testId} OK'))
     else:
@@ -140,6 +153,7 @@ def _runJavaTest(ctx, studentDir: str, codeDir: str, assignment: Assignment, log
         0 if result.compileError else 1)
     if kind == 'run':
         ctx.storeTestResultInSpreadsheet(studentDir, assignment, testId, [prefix + 'R'],
-            0 if result.compileError else 1)
+            0 if result.runError else 1)
     if kind == 'test':
         ctx.storeTestResultInSpreadsheet(studentDir, assignment, testId, [prefix + 'T'], result.ratio())
+    return result

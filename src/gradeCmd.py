@@ -5,12 +5,7 @@ from ownLogging import *
 from typing import *
 from ansi import *
 import shell
-import re
-import os
 from config import Config, Assignment
-import testHaskell
-import testPython
-import testJava
 import utils
 import spreadsheet
 from testCommon import *
@@ -61,7 +56,8 @@ def forEach(cfg: Config, args, action):
     dirs = args.dirs
     if not dirs:
         dirs = collectSubmissionDirs(cfg, startAt=args.startAt)
-    for d in dirs:
+    total = len(dirs)
+    for i, d in enumerate(dirs):
         assignments = cfg.assignments
         if args.assignments:
             assignments = []
@@ -70,7 +66,7 @@ def forEach(cfg: Config, args, action):
                     assignments.append(a)
         if not assignments:
             print(f'No assignments found or selected!')
-        action(d, assignments)
+        action(d, assignments, total, i)
     return dirs
 
 
@@ -90,11 +86,14 @@ def readCommand(cfg, args, mainFile):
         else:
             print("Invalid input")
 
-def doGrade(cfg, args, studentDir, assignments):
+def doGrade(cfg, args, studentDir, assignments, studTotal, studIdx):
     while True:
         (_name, id) = utils.parseSubmissionDir(cfg, studentDir)
-        for a in assignments:
-            print(blue(f'Grading assignment {a.id} of student {prettyStudent(cfg, studentDir)}'))
+        total = studTotal * len(assignments)
+        for i, a in enumerate(assignments):
+            thisIdx = studIdx * len(assignments) + i + 1
+            print()
+            print(blue(f'[{thisIdx}/{total}] Grading assignment {a.id} of student {prettyStudent(cfg, studentDir)}'))
             (path, _sheet) = getSpreadsheet(studentDir, id, a)
             shell.run(['open', path])
             m = a.getMainFile(studentDir)
@@ -111,6 +110,6 @@ def doGrade(cfg, args, studentDir, assignments):
             return
 
 def grade(cfg, args):
-    def action(d, assignments):
-        doGrade(cfg, args, d, assignments)
+    def action(d, assignments, total, i):
+        doGrade(cfg, args, d, assignments, total, i)
     forEach(cfg, args, action)
