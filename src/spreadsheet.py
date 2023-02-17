@@ -1,6 +1,6 @@
 from typing import *
 from ownLogging import *
-from spreadsheet_lib import *
+from mySpreadsheet import *
 
 def findColumnIndex(sheet: Sheet, title: Union[str, list[str]]) -> list[int]:
     if not isinstance(title, list):
@@ -25,7 +25,7 @@ SpreadsheetKind = Literal['openpyxl', 'xlwings']
 
 def load(path, sheetName, k, dataOnly=False):
     if k == 'openpyxl':
-        return OpenpyxlSheet.load(path, sheetName, dataOnly=dataOnly)
+        return XlsxSheet.load(path, sheetName, dataOnly=dataOnly)
     else:
         return XlwingsSheet.load(path, sheetName)
 
@@ -38,7 +38,8 @@ def getFirstDataFromRow(path: str, sheetName: str, rowTitle: Union[str, list[str
                 f"titles {rowTitle}")
         for col in sheet.colIndices(start=1):
             v = sheet.value(col=col, row=row)
-            if v:
+            #print(f'row={row}, col={col}, v={v}')
+            if v is not None:
                 return v
         if spreadsheetKind == 'openpyxl':
             return getFirstDataFromRow(path, sheetName, rowTitle, 'xlwings')
@@ -124,18 +125,5 @@ def enterData(
         verbose(f'Storing {data} at col={dataColumnIx}, row={rowIx} in {path} (sheet: {sheetName})')
         sheet.setValue(col=dataColumnIx, row=rowIx, value=data)
         sheet.save(path)
-        return f'{resolveColIndex(dataColumnIx)}{rowIx+1}'
+        return f'{getColumnLetter(dataColumnIx)}{rowIx+1}'
 
-COLS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
-def resolveColIndex(i):
-    n = len(COLS)
-    if i < n:
-        return COLS[i]
-    else:
-        x = (i // n) - 1
-        y = i % n
-        if x >= n or y >= n:
-            return '??'
-        else:
-            return COLS[x] + COLS[y]

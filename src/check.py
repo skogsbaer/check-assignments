@@ -10,6 +10,7 @@ import jplagCmd
 import fixEncodingCmd
 import gradeCmd
 import collectCmd
+import removeEmptyCmd
 from ownLogging import *
 from utils import *
 from config import *
@@ -82,6 +83,18 @@ def parseArgs():
                        help='The student directories to run the tests for.')
     grade.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
     grade.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
+    rmEmpty = subparsers.add_parser('removeEmpty', help='Remove empty submission directories')
+    rmEmpty.add_argument('--dry',  action='store_true', default=False,
+                         help='Dry run, do not actually remove unchanged directories')
+    rmEmpty.add_argument('templateDir', metavar='TEMPLATE_DIR', type=str,
+                         help='The template directory. Directories unchanged wrt this directory are removed.')
+    rmEmpty.add_argument('dirs', metavar='STUDENT_DIR', type=str, nargs='*',
+                         help='The student directories to cleanup.')
+    rmEmpty.add_argument('--uidCol', help='Title of the uid column, default: Login',
+                         metavar='COL', default='Login')
+    rmEmpty.add_argument('--contentCol', help='Title of the colum whose content must be non-empty, default: A1',
+                         metavar='COL', default='A1')
+    rmEmpty.add_argument('--sheet', help='.xlsx file with ratings', metavar='FILE', required=True)
     importCmd = subparsers.add_parser('import', help='Import a .csv file from moodle to produce an Excel spreadsheet for rating')
     importCmd.add_argument('file', metavar='CSV_FILE', type=str, help='A .csv file from moodle')
     prepareCmd = subparsers.add_parser('prepare', help='Shortcut for import+unzip+addComment')
@@ -153,6 +166,10 @@ def main():
             assignments = []
         a = gradeCmd.GradeArgs(args.dirs, assignments, stripSlashes(args.startAt))
         gradeCmd.grade(config, a)
+    elif args.cmd == 'removeEmpty':
+        a = removeEmptyCmd.RemoveEmptyArgs(args.sheet, args.uidCol, args.contentCol,
+                                           args.templateDir, args.dirs, args.dry)
+        removeEmptyCmd.removeEmpty(config, a)
     elif args.cmd == 'export':
         exportCmd.export(config)
     elif args.cmd == 'jplag':

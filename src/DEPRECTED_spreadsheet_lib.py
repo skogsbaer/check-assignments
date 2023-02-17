@@ -67,6 +67,25 @@ class Sheet(abc.ABC):
     def __exit__(self, exc_type, value, traceback):
         self.close()
 
+class RowRecord:
+    """
+    Represents a row in a spreadsheet as a list of key-value pairs
+    """
+    def __init__(self, l):
+        self.list = l
+    def __getitem__(self, k, multi=False, default=None):
+        pass
+
+def sheetAsDict(sheet: Sheet, keyColName: str):
+    """
+    Turns a spreadsheet into a dictionary.
+
+    * The contents of keyColName become the keys in the dictionary. Rows with empty keys
+      are ignored. Duplicate keys lead to a ValueError
+    * The values of the dictionary are RowRecord instances
+    """
+    pass
+
 def saveBook(book, path):
     # I experienced problem with corrupt .xlsx files, probably when the python process
     # was interrupted while writing the data.
