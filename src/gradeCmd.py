@@ -59,13 +59,14 @@ def forEach(cfg: Config, args, action):
     total = len(dirs)
     for i, d in enumerate(dirs):
         assignments = cfg.assignments
-        if args.assignments:
-            assignments = []
-            for a in cfg.assignments:
-                if str(a.id) in args.assignments:
-                    assignments.append(a)
-        if not assignments:
-            print(f'No assignments found or selected!')
+        if hasattr(args, 'assignments'):
+            if args.assignments:
+                assignments = []
+                for a in cfg.assignments:
+                    if str(a.id) in args.assignments:
+                        assignments.append(a)
+            if not assignments:
+                print(f'No assignments found or selected!')
         action(d, assignments, total, i)
     return dirs
 
@@ -94,6 +95,7 @@ def doGrade(cfg, args, studentDir, assignments, studTotal, studIdx):
             thisIdx = studIdx * len(assignments) + i + 1
             print()
             print(blue(f'[{thisIdx}/{total}] Grading assignment {a.id} of student {prettyStudent(cfg, studentDir)}'))
+            t = utils.displayTimer()
             (path, _sheet) = getSpreadsheet(studentDir, id, a)
             shell.run(['open', path])
             m = a.getMainFile(studentDir)
@@ -104,6 +106,7 @@ def doGrade(cfg, args, studentDir, assignments, studTotal, studIdx):
                 print(f'No main file found for assignment {a.id}')
                 cmdList = ['code', '--new-window', '--wait', studentDir]
                 shell.run(cmdList)
+            t.stop()
         print(blue(f'Just graded all assignments for student {prettyStudent(cfg, studentDir)}'))
         cmd = readCommand(cfg, args, None)
         if cmd == CONTINUE_COMMAND:

@@ -124,9 +124,11 @@ def getSingularPlural(dicts, kSing, kPlur):
 # A spreadsheet can be given as either
 # - FILEPATH (take the active sheet at FILEPATH)
 # - FILEPATH -> SHEET (take SHEET at FILEPATH)
-def getCustomRatingSheet(dicts, key: str, kind: Literal['path', 'sheet']):
+def getCustomRatingSheet(dicts, key: str, kind: Literal['path', 'sheet'], assignmentId: Optional[int] = None):
     custom = getFromDicts(dicts, key, default=None, fail=False)
     if custom:
+        if assignmentId:
+            custom = expandAssignmentId(custom, assignmentId)
         custom = custom.strip()
         l = custom.split('->')
         if len(l) <= 1:
@@ -145,6 +147,9 @@ def getCustomRatingSheet(dicts, key: str, kind: Literal['path', 'sheet']):
     else:
         return sheet
 
+def expandAssignmentId(x, id):
+    return expandVars(x, {'N': str(id), 'NN': str(id).zfill(2)})
+
 @dataclass
 class Assignment:
     id: int
@@ -158,7 +163,7 @@ class Assignment:
             raise TypeError("Assignment.id must be an int")
     @staticmethod
     def parse(baseDir, id, dicts):
-        dicts = expandVars(dicts, {'N': str(id), 'NN': str(id).zfill(2)})
+        dicts = expandAssignmentId(dicts, id)
         points = getFromDicts(dicts, Keys.points, int)
         kind = getFromDicts(dicts, Keys.kind)
         tests = getFromDicts(dicts, Keys.tests, default={}, fail=False)
@@ -287,9 +292,10 @@ class Config:
         ymlDict.update(configDict)
         ymlDict = expandVars(ymlDict, ymlDict)
         assignments= []
-        for k, v in ymlDict['assignments'].items():
-            a = Assignment.parse(baseDir, k, [v, ymlDict])
-            assignments.append(a)
+        if 'assignments' in ymlDict:
+            for k, v in ymlDict['assignments'].items():
+                a = Assignment.parse(baseDir, k, [v, ymlDict])
+                assignments.append(a)
         return Config(baseDir, ymlDict, assignments)
 
     def isSubmissionDir(self, x):
@@ -329,6 +335,20 @@ class Config:
     def commentsFile(self):
         return 'COMMENTS.txt'
 
+    def _toplevelProp(self, k):
+        x = self.configDict.get(k, None)
+        if x is None:
+            raise ValueError(f'No {k}  property at top-level')
+        return x
+
+    @property
+    def testDir(self):
+        return self._toplevelProp('test-dir')
+
+    @property
+    def kind(self):
+        return self._toplevelProp('kind')
+
     @property
     def assignmentsGroupedByKind(self):
         d = {}
@@ -353,6 +373,12 @@ class Config:
             return defaultRatingSheet(self.baseDir)
         else:
             return p
+
+    def spreadsheetTemplatePath(self, assignmentId):
+        return getCustomRatingSheet(self.configDict, 'rating-template', 'path', assignmentId)
+
+    def spreadsheetTemplateAssignmentResultSheet(self, assignmentId):
+        return getCustomRatingSheet(self.configDict, 'rating-template', 'sheet', assignmentId)
 
 def mkConfig(baseDir, configDict):
     if not shell.isdir(baseDir):

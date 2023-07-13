@@ -11,6 +11,7 @@ import fixEncodingCmd
 import gradeCmd
 import collectCmd
 import removeEmptyCmd
+import praktomatTestCmd
 from ownLogging import *
 from utils import *
 from config import *
@@ -65,7 +66,9 @@ def parseArgs():
                        help='Print diff if score is 100%%')
     unzip = subparsers.add_parser('unzip', help='Unzip all files downloaded from moodle')
     addComment = subparsers.add_parser('addComment', help='Add a file COMMENTS.txt to all student directories')
-    runTests = subparsers.add_parser('runTests', help='Run the tests, do interactive grading')
+    runTests = subparsers.add_parser('runTests',
+                                     help='DEPRECATED, better use --runPraktomatTests. ' +
+                                          'Run the tests, do interactive grading')
     runTests.add_argument('dirs', metavar='DIR', type=str, nargs='*',
                           help='The student directories to run the tests for.')
     runTests.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
@@ -78,6 +81,11 @@ def parseArgs():
     runTests.add_argument('--openSpreadsheet',
                           help='Automatically open the grading spreadsheet (only with "--interactive assignment")',
                           action='store_true', default=False)
+    runPrTests = subparsers.add_parser('runPraktomatTests', help='Run the tests with praktomat-checkers')
+    runPrTests.add_argument('dirs', metavar='DIR', type=str, nargs='*',
+                          help='The student directories to run the tests for.')
+    runPrTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
+    runPrTests.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
     grade = subparsers.add_parser('grade', help='Grading for exams')
     grade.add_argument('dirs', metavar='DIR', type=str, nargs='*',
                        help='The student directories to run the tests for.')
@@ -159,6 +167,14 @@ def main():
             args.sanityCheck,
             args.openSpreadsheet)
         testCmd.runTests(config, a)
+    elif args.cmd == 'runPraktomatTests':
+        if args.assignments:
+            assignments = args.assignments.split(',')
+        else:
+            print(f'The {args.cmd} command requires an explicit list of assignments')
+            return
+        a = praktomatTestCmd.PrTestArgs(args.dirs, stripSlashes(args.startAt), assignments)
+        praktomatTestCmd.runTests(config, a)
     elif args.cmd == 'grade':
         if args.assignments:
             assignments = args.assignments.split(',')

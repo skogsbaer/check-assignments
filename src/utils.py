@@ -3,6 +3,8 @@ import os
 import zipfile
 import shutil
 from ownLogging import *
+from threading import Thread
+import time
 
 def readBinaryFile(name):
     with open(name, 'rb') as f:
@@ -77,7 +79,10 @@ def parseSubmissionDir(cfg, d):
     elif len(comps) == 1:
         return (x, x)
     else:
-        return (comps[0], comps[1])
+        name = comps[0]
+        nameComps = name.split()
+        id = '_'.join(nameComps) + '_' + comps[1]
+        return (comps[0], id)
 
 def stripSlashes(x):
     if not x:
@@ -176,7 +181,7 @@ def fileSystemItemEquals(path1: str, path2: str):
         return False
 
 def withLimitedDir(sourceDir, subdirs, action):
-    with shell.tempDir(suffix=shell.basename(sourceDir), delete=True) as tmp:
+    with shell.tempDir(suffix=shell.basename(sourceDir), delete=False) as tmp:
         for sub in subdirs:
             target = shell.pjoin(tmp, sub)
             shell.mkdir(target, createParents=True)
@@ -188,3 +193,22 @@ def firstUpper(s: str) -> str:
         return s[0].upper() + s[1:]
     else:
         return s
+
+class TimerThread(Thread):
+    def __init__(self):
+        super().__init__()
+        self.stopped = False
+    def run(self):
+        sleepTime = 5
+        i = sleepTime
+        while not self.stopped:
+            time.sleep(sleepTime)
+            print(f'[{i}s]')
+            i += sleepTime
+    def stop(self):
+        self.stopped = True
+
+def displayTimer():
+    t = TimerThread()
+    t.start()
+    return t

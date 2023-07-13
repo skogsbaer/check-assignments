@@ -31,6 +31,10 @@ class Result:
         runError = (':run FAILED') in s
         nPass = len(testPassRegex.findall(s))
         nFail = len(testFailRegex.findall(s))
+        if ':test FAILED' in s:
+            nFail = nFail - 1
+        if ':test PASSED' in s:
+            nPassed = nPassed - 1
         return Result(compileError, runError, nPass + nFail, nFail, s)
 
 def runJavaTests(ctx, studentDir: str, assignment: Assignment):
@@ -63,14 +67,25 @@ def hasUnitTests(d):
     return False
 
 def appendOutputToFile(path, timestamp, s):
-    with open(path, 'a') as f:
-        f.write(f'\n\n/* OUTPUT {timestamp}\n\n{s}\n*/\n')
+    print(f'writing to {path}')
+    start = '/* *** OUTPUT START ***'
+    lines = []
+    with open(path, 'r') as f:
+        for line in f.readlines():
+            if line.strip() == start:
+                break
+            lines.append(line)
+    content = ''.join(lines)
+    if content and content[-1] != '\n':
+        content += '\n\n'
+    content += f'{start}\n{timestamp}\n\n{s}\n*/\n'
+    with open(path, 'w') as f:
+        f.write(content)
 
 def _runJavaTests(ctx, studentDir: str, codeDir: str, assignment: Assignment):
     logFileName = shell.pjoin(studentDir, f'OUTPUT_{assignment.id}.txt')
-    shell.rm(logFileName)
     timestamp = time.ctime()
-    shell.writeFile(f"RUN: {timestamp}\n\n")
+    shell.writeFile(logFileName, f"RUN: {timestamp}\n\n")
     noMainClass = "NOT_EXISTING_CLASS"
     # compile code
     compileResult = _runJavaTest(ctx, studentDir, codeDir, assignment, logFileName,
@@ -86,7 +101,7 @@ def _runJavaTests(ctx, studentDir: str, codeDir: str, assignment: Assignment):
             testId=str(assignment.id),
             testDir="NOT_EXISTING_TEST_DIR",
             testFilter=None, kind='run', mainClass=mainClass, isStudent=True)
-        appendOutputToFile(m, timestamp, runResult.output)
+        appendOutputToFile(assignment.getMainFile(studentDir), timestamp, runResult.output)
     if hasUnitTests(codeDir):
         _runJavaTest(ctx, studentDir, codeDir, assignment, logFileName,
             testId=str(assignment.id),
