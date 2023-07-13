@@ -4,15 +4,19 @@ import gradeCmd
 from ansi import *
 import spreadsheet
 from dataclasses import dataclass
+from shell import *
 
 @dataclass
 class CollectArgs:
     startAt: str
     targetFile: str
     sheetName: str
+    checkCompletenessOnly: bool
+    eklausurenMoodle: bool
 
 def collect(cfg: Config, args: CollectArgs):
     dirs = utils.collectSubmissionDirs(cfg, startAt=args.startAt)
+    errors = 0
     for studentDir in dirs:
         (name, id) = utils.parseSubmissionDir(cfg, studentDir)
         print(f'Collecting results for {name}')
@@ -21,6 +25,7 @@ def collect(cfg: Config, args: CollectArgs):
             (path, sheet) = gradeCmd.getSpreadsheet(studentDir, id, a, copy=False)
             if path is None:
                 print(red(f"No spreadsheet found for {name}"))
+                errors += 1
             else:
                 verbose(f'      Reading data from {path}')
                 titles = [f'A{a.id} TOTAL', f'Aufgabe {a.id} TOTAL', 'Aufgabe TOTAL']
@@ -38,10 +43,46 @@ def collect(cfg: Config, args: CollectArgs):
                         float(p)
                     except ValueError:
                         print(red(f"Invalid grading found in {path}: {repr(p)} Sometimes you have to reopen the file the force formula evaluation"))
+                        errors += 1
+                if args.checkCompletenessOnly:
+                    continue
                 verbose(f'      Done reading data from {path}')
                 targetFile = args.targetFile
                 verbose(f'      Entering data into {targetFile}')
-                spreadsheet.enterData(targetFile, ['Login', 'Matrikel'], id,
+                lookupStudentId = id
+                idCols = ['Login', 'Matrikel']
+                if args.eklausurenMoodle:
+                    lookupStudentId = fixEklausurenMoodleId(cfg, studentDir)
+                    idCols = ['Name', 'Matrikel']
+                    verbose(f'Using ID {lookupStudentId} for student {name} ({id})')
+                spreadsheet.enterData(targetFile, idCols, lookupStudentId,
                     f"A{a.id}", p, args.sheetName)
                 verbose(f'      Done entering data into {targetFile}')
+    if errors:
+        print(red(f'Found {errors} problems'))
+    elif args.checkCompletenessOnly:
+        print('All grading complete (but not yet entered into the main spreadsheet)')
 
+def fixEklausurenMoodleId(cfg, studentDir):
+    """
+    Eklausuren Moodle does not have Matriklernummers. So we have to turn the studentDir
+    into Nachname,Vorname so that it can be found in the main spreadsheet.
+    For very few students, this does not give a unique id. Hence, we also support a file
+    studentDir/MATRIKEL.txt that may contain the matrikel number.
+    """
+    matrikelFile = pjoin(studentDir, 'MATRIKEL.txt')
+    if isFile(matrikelFile):
+        return readFile(matrikelFile).strip()
+    x = utils.normalizeSubmissionDir(cfg, studentDir)
+    try:
+        i = x.index('_')
+    except ValueError:
+        raise ValueError('Invalid submission directory: ' + studentDir)
+    name = x[:i]
+    l = name.split(maxsplit=1)
+    if len(l) == 1:
+        return name
+    else:
+        first = l[0]
+        last = l[1]
+        return last + ',' + first

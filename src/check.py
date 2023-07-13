@@ -111,9 +111,13 @@ def parseArgs():
                                    help='From rating.xlsx, generate a POINTS.txt file for each student and a single .csv file for uploading in moodle')
     fixEnc = subparsers.add_parser('fixEncoding', help='Fix encoding of source files.')
     collect = subparsers.add_parser('collect', help='Colllect credits for assignment and store in spreadsheet')
-    collect.add_argument('file', metavar='EXCEL_FILE', type=str, help='The spreadsheet where credits should be stored')
+    collect.add_argument('--file', metavar='EXCEL_FILE', type=str, help='The spreadsheet where credits should be stored')
     collect.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
-    collect.add_argument('--sheet-name', default='Ergebnis', help='Name of the sheet in the spreadsheet')
+    collect.add_argument('--sheetName', default='Ergebnis', help='Name of the sheet in the spreadsheet')
+    collect.add_argument('--completeness', help='Only check if all assignments have been examined for all students',
+                         action='store_true', default=False)
+    collect.add_argument('--eklausurenMoodle', help='Submission come from Eklausuren Moodle (requires a special ID fix)',
+                         action='store_true', default=False)
     return parser.parse_args()
 
 def main():
@@ -194,7 +198,10 @@ def main():
     elif args.cmd == 'fixEncoding':
         fixEncodingCmd.fixEncoding(config)
     elif args.cmd == 'collect':
-        a = collectCmd.CollectArgs(args.startAt, args.file, args.sheet_name)
+        if not args.completeness and not args.file:
+            print(f'Option --file required')
+        a = collectCmd.CollectArgs(args.startAt, args.file, args.sheetName,
+                                   args.completeness, args.eklausurenMoodle)
         collectCmd.collect(config, a)
     else:
         warn('Unknown command: ' + args.cmd)

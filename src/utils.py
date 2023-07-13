@@ -62,10 +62,7 @@ def findSubmissionDirForId(config, x):
             return d
     return dirs[0]
 
-def parseSubmissionDir(cfg, d):
-    """
-    Returns a pair (name, id) where id is either the loginname or the matrikel of the student.
-    """
+def normalizeSubmissionDir(cfg, d):
     x = shell.basename(d)
     if not x:
         x = d
@@ -73,6 +70,13 @@ def parseSubmissionDir(cfg, d):
     x = stripTrailingSlash(x)
     if not cfg.isSubmissionDir(x):
         raise ValueError(f'Invalid submission directory: {x}')
+    return x
+
+def parseSubmissionDir(cfg, d):
+    """
+    Returns a pair (name, id) where id is either the loginname or the matrikel of the student.
+    """
+    x = normalizeSubmissionDir(cfg, d)
     comps = [s.strip() for s in x.split('_')]
     if len(comps) == 0:
         raise ValueError(f'Invalid submission directory: {x}')
@@ -82,7 +86,7 @@ def parseSubmissionDir(cfg, d):
         name = comps[0]
         nameComps = name.split()
         id = '_'.join(nameComps) + '_' + comps[1]
-        return (comps[0], id)
+        return (name, id)
 
 def stripSlashes(x):
     if not x:

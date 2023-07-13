@@ -79,6 +79,7 @@ def runPraktomatTest(cfg: config.Config, d, assignmentIds):
             '--submission-dir', d,
             '--test-dir', cfg.testDir,
             cfg.kind,
+            '--wypp', cfg.wyppDir,
             '--sheet', '.']
         for x in assignmentIds:
             # FIXME: for java this will fail because praktomat-checker does not support
@@ -88,6 +89,9 @@ def runPraktomatTest(cfg: config.Config, d, assignmentIds):
             logFile = shell.pjoin(d, f'OUTPUT_{x}.txt')
             with shell.createTee([shell.TEE_STDOUT, logFile]) as tee:
                 shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=tee)
+            if not shell.isFile(resFile):
+                utils.abort(f'Praktomat checker did not produce result file {resFile}. '
+                            f'Command: {" ".join(cmd)}')
             with open(resFile, 'rb') as f:
                 resDict = pickle.load(f)
             res = PrResult.fromDict(x, resDict)
