@@ -86,6 +86,8 @@ def parseArgs():
                           help='The student directories to run the tests for.')
     runPrTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
     runPrTests.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
+    runPrTests.add_argument('--praktomat', metavar='ARGUMENTS',
+                            help='Pass arguments directly to praktomat-checker command. Arguments are splitted on whitespace')
     grade = subparsers.add_parser('grade', help='Grading for exams')
     grade.add_argument('dirs', metavar='DIR', type=str, nargs='*',
                        help='The student directories to run the tests for.')
@@ -177,7 +179,8 @@ def main():
         else:
             print(f'The {args.cmd} command requires an explicit list of assignments')
             return
-        a = praktomatTestCmd.PrTestArgs(args.dirs, stripSlashes(args.startAt), assignments)
+        a = praktomatTestCmd.PrTestArgs(args.dirs, stripSlashes(args.startAt), assignments,
+                                        args.praktomat.split())
         praktomatTestCmd.runTests(config, a)
     elif args.cmd == 'grade':
         if args.assignments:

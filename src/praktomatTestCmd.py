@@ -6,12 +6,14 @@ import pickle
 from typing import *
 import spreadsheet
 import utils
+from ownLogging import *
 
 @dataclass
 class PrTestArgs:
     dirs: list[str]
     startAt: str
     assignments: list[str]
+    praktomatArgs: list[str]
 
 def getSpreadsheet(cfg: config.Config, studentDir: str, studentId: str, assignmentId: str, copy=True):
     templatePath = cfg.spreadsheetTemplatePath(assignmentId)
@@ -54,6 +56,9 @@ class PrResult:
             ('C', 0 if self.error else 1), # Tutor code compiles
             ('T', ratio) # Tutor tests
         ]
+        if shell.basename(studentDir) == 'MUSTERMANN':
+            print(f'Would store the following for {studentDir} and assignment {self.assignmentId}: {results}')
+            return
         (name, id) = utils.parseSubmissionDir(cfg, studentDir)
         (path, sheet) = getSpreadsheet(cfg, studentDir, id, self.assignmentId)
         for k, v in results:
@@ -71,7 +76,7 @@ class PrResult:
 
 PRAKTOMAT_CHECK = '/Users/swehr/devel/praktomat-checkers/multi-checker/script/check.py'
 
-def runPraktomatTest(cfg: config.Config, d, assignmentIds):
+def runPraktomatTest(cfg: config.Config, d, assignmentIds, extraArgs: list[str]):
     with shell.tempDir() as tmp:
         resFile = shell.pjoin(tmp, "result")
         baseCmd = ['python3', PRAKTOMAT_CHECK,
@@ -79,13 +84,11 @@ def runPraktomatTest(cfg: config.Config, d, assignmentIds):
             '--submission-dir', d,
             '--test-dir', cfg.testDir,
             cfg.kind,
-            '--wypp', cfg.wyppDir,
-            '--sheet', '.']
+            '--sheet', '.'] + extraArgs
+        if cfg.kind == 'python':
+            baseCmd.extend(['--wypp', cfg.wyppDir])
         for x in assignmentIds:
-            # FIXME: for java this will fail because praktomat-checker does not support
-            # --assignment for java
-            # We need to support this in praktomat-checker
-            cmd = baseCmd + ['--assignment', x, cfg.kind]
+            cmd = baseCmd + ['--assignment', x]
             logFile = shell.pjoin(d, f'OUTPUT_{x}.txt')
             with shell.createTee([shell.TEE_STDOUT, logFile]) as tee:
                 shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=tee)
@@ -100,6 +103,6 @@ def runPraktomatTest(cfg: config.Config, d, assignmentIds):
 def runTests(cfg: config.Config, args: PrTestArgs):
     def action(d, _assignments, _total, _i):
         print('running for ' + d)
-        runPraktomatTest(cfg, d, args.assignments)
+        runPraktomatTest(cfg, d, args.assignments, args.praktomatArgs)
     gradeCmd.forEach(cfg, args, action)
 
