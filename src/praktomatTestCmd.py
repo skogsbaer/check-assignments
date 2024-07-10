@@ -89,9 +89,10 @@ def runPraktomatTest(cfg: config.Config, d, assignmentIds, extraArgs: list[str])
             baseCmd.extend(['--wypp', cfg.wyppDir])
         for x in assignmentIds:
             cmd = baseCmd + ['--assignment', x]
+            res = shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=True)
             logFile = shell.pjoin(d, f'OUTPUT_{x}.txt')
-            with shell.createTee([shell.TEE_STDOUT, logFile]) as tee:
-                shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=tee)
+            utils.writeFile(logFile, res.stdout)
+            print(res.stdout)
             if not shell.isFile(resFile):
                 utils.abort(f'Praktomat checker did not produce result file {resFile}. '
                             f'Command: {" ".join(cmd)}')

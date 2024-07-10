@@ -179,8 +179,10 @@ def main():
         else:
             print(f'The {args.cmd} command requires an explicit list of assignments')
             return
-        a = praktomatTestCmd.PrTestArgs(args.dirs, stripSlashes(args.startAt), assignments,
-                                        args.praktomat.split())
+        prArgs = []
+        if args.praktomat:
+            prArgs = args.praktomat.split()
+        a = praktomatTestCmd.PrTestArgs(args.dirs, stripSlashes(args.startAt), assignments, prArgs)
         praktomatTestCmd.runTests(config, a)
     elif args.cmd == 'grade':
         if args.assignments:

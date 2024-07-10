@@ -272,7 +272,7 @@ def expandVars(y, vars):
     else:
         return y
 
-uidRegex = re.compile('^[a-z0-9]+$')
+uidRegex = re.compile('^[a-z0-9A-Z]+$')
 
 @dataclass
 class Config:

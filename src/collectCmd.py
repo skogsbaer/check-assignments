@@ -14,9 +14,14 @@ class CollectArgs:
     checkCompletenessOnly: bool
     eklausurenMoodle: bool
 
+def repair(path):
+    with spreadsheet.load(path, None, 'xlwings', dataOnly=False) as sheet:
+        sheet.save(path)
+
 def collect(cfg: Config, args: CollectArgs):
     dirs = utils.collectSubmissionDirs(cfg, startAt=args.startAt)
     errors = 0
+    invalid = []
     for studentDir in dirs:
         (name, id) = utils.parseSubmissionDir(cfg, studentDir)
         print(f'Collecting results for {name}')
@@ -42,8 +47,9 @@ def collect(cfg: Config, args: CollectArgs):
                     try:
                         float(p)
                     except ValueError:
-                        print(red(f"Invalid grading found in {path}: {repr(p)} Sometimes you have to reopen the file the force formula evaluation"))
+                        print(red(f"Invalid grading found in {path}: Sometimes you have to reopen the file the force formula evaluation"))
                         errors += 1
+                        invalid.append(path)
                 if args.checkCompletenessOnly:
                     continue
                 verbose(f'      Done reading data from {path}')
@@ -60,6 +66,14 @@ def collect(cfg: Config, args: CollectArgs):
                 verbose(f'      Done entering data into {targetFile}')
     if errors:
         print(red(f'Found {errors} problems'))
+    if invalid:
+        print(red('The following files have invalid gradings:'))
+        for x in invalid:
+            print(x)
+        print('Now trying to repair the files.')
+        for x in invalid:
+            repair(x)
+        print('I tried to repair the files. Please run the completeness check again to see if this was successful.')
     elif args.checkCompletenessOnly:
         print('All grading complete (but not yet entered into the main spreadsheet)')
 
