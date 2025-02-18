@@ -13,8 +13,9 @@ from ownLogging import *
 
 @dataclass
 class GradeArgs:
-    dirs: List[str]
-    assignments: List[str] # take all if empty
+    dirs: list[str]
+    subDir: Optional[str]
+    assignments: list[str] # take all if empty
     startAt: str
 
 def prettyStudent(cfg, studentDir):
@@ -87,7 +88,7 @@ def readCommand(cfg, args, mainFile):
         else:
             print("Invalid input")
 
-def doGrade(cfg, args, studentDir, assignments, studTotal, studIdx):
+def doGrade(cfg: Config, args: GradeArgs, studentDir: str, assignments: list[str], studTotal: int, studIdx: int):
     while True:
         (_name, id) = utils.parseSubmissionDir(cfg, studentDir)
         total = studTotal * len(assignments)
@@ -98,7 +99,8 @@ def doGrade(cfg, args, studentDir, assignments, studTotal, studIdx):
             t = utils.displayTimer()
             (path, _sheet) = getSpreadsheet(studentDir, id, a)
             shell.run(['open', path])
-            m = a.getMainFile(studentDir)
+            submissionDir = shell.pjoin(studentDir, args.subDir) if args.subDir else studentDir
+            m = a.getMainFile(submissionDir)
             if m:
                 cmdList = ['code', '--new-window', '--wait', '--goto', m, studentDir]
                 shell.run(cmdList)
@@ -112,7 +114,7 @@ def doGrade(cfg, args, studentDir, assignments, studTotal, studIdx):
         if cmd == CONTINUE_COMMAND:
             return
 
-def grade(cfg, args):
+def grade(cfg: Config, args: GradeArgs):
     def action(d, assignments, total, i):
         doGrade(cfg, args, d, assignments, total, i)
     forEach(cfg, args, action)

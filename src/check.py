@@ -86,6 +86,8 @@ def parseArgs():
                           help='The student directories to run the tests for.')
     runPrTests.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
     runPrTests.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
+    runPrTests.add_argument('--subDir', help='Subdirectory inside the student directory containing the submission',
+                            metavar='SUBDIR', dest='subDir', required=False, type=str)
     runPrTests.add_argument('--praktomat', metavar='ARGUMENTS',
                             help='Pass arguments directly to praktomat-checker command. Arguments are splitted on whitespace')
     grade = subparsers.add_parser('grade', help='Grading for exams')
@@ -93,6 +95,8 @@ def parseArgs():
                        help='The student directories to run the tests for.')
     grade.add_argument('--assignments', help='Comma-separated list of assignments', type=str, metavar='LIST', dest='assignments')
     grade.add_argument('--startAt', help='Start point (a submission directory)', metavar='DIR', dest='startAt')
+    grade.add_argument('--subDir', help='Subdirectory inside the student directory containing the submission',
+                            metavar='SUBDIR', dest='subDir', required=False, type=str)
     rmEmpty = subparsers.add_parser('removeEmpty', help='Remove empty submission directories')
     rmEmpty.add_argument('--dry',  action='store_true', default=False,
                          help='Dry run, do not actually remove unchanged directories')
@@ -182,14 +186,15 @@ def main():
         prArgs = []
         if args.praktomat:
             prArgs = args.praktomat.split()
-        a = praktomatTestCmd.PrTestArgs(args.dirs, stripSlashes(args.startAt), assignments, prArgs)
+        a = praktomatTestCmd.PrTestArgs(args.dirs, args.subDir,
+                                        stripSlashes(args.startAt), assignments, prArgs)
         praktomatTestCmd.runTests(config, a)
     elif args.cmd == 'grade':
         if args.assignments:
             assignments = args.assignments.split(',')
         else:
             assignments = []
-        a = gradeCmd.GradeArgs(args.dirs, assignments, stripSlashes(args.startAt))
+        a = gradeCmd.GradeArgs(args.dirs, args.subDir, assignments, stripSlashes(args.startAt))
         gradeCmd.grade(config, a)
     elif args.cmd == 'removeEmpty':
         a = removeEmptyCmd.RemoveEmptyArgs(args.sheet, args.uidCol, args.contentCol,

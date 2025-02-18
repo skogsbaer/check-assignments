@@ -11,6 +11,7 @@ from ownLogging import *
 @dataclass
 class PrTestArgs:
     dirs: list[str]
+    subDir: Optional[str]
     startAt: str
     assignments: list[str]
     praktomatArgs: list[str]
@@ -104,6 +105,6 @@ def runPraktomatTest(cfg: config.Config, d, assignmentIds, extraArgs: list[str])
 def runTests(cfg: config.Config, args: PrTestArgs):
     def action(d, _assignments, _total, _i):
         print('running for ' + d)
-        runPraktomatTest(cfg, d, args.assignments, args.praktomatArgs)
+        runPraktomatTest(cfg, d, args.subDir, args.assignments, args.praktomatArgs)
     gradeCmd.forEach(cfg, args, action)
 
