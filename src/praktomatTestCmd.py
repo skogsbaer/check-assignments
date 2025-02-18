@@ -77,19 +77,25 @@ class PrResult:
 
 PRAKTOMAT_CHECK = '/Users/swehr/devel/praktomat-checkers/multi-checker/script/check.py'
 
-def runPraktomatTest(cfg: config.Config, d, assignmentIds, extraArgs: list[str]):
+def runPraktomatTest(cfg: config.Config, d: str, subDir: Optional[str],
+                     assignmentIds: list[str], extraArgs: list[str]):
     with shell.tempDir() as tmp:
         resFile = shell.pjoin(tmp, "result")
+        submissionDir = shell.pjoin(d, subDir) if subDir else d
         baseCmd = ['python3', PRAKTOMAT_CHECK,
             '--result-file', resFile,
-            '--submission-dir', d,
-            '--test-dir', cfg.testDir,
-            cfg.kind,
-            '--sheet', '.'] + extraArgs
+            '--submission-dir', submissionDir,
+            '--test-dir', cfg.testDir
+        ]
+        if isVerboseLogging():
+            baseCmd.append('--debug')
+        baseCmd.extend([cfg.kind, '--sheet', '.'])
+        baseCmd.extend(extraArgs)
         if cfg.kind == 'python':
             baseCmd.extend(['--wypp', cfg.wyppDir])
         for x in assignmentIds:
             cmd = baseCmd + ['--assignment', x]
+            verbose('Running praktomat command: ' + " ".join(cmd))
             res = shell.run(cmd, onError='ignore', stderrToStdout=True, captureStdout=True)
             logFile = shell.pjoin(d, f'OUTPUT_{x}.txt')
             utils.writeFile(logFile, res.stdout)

@@ -11,6 +11,9 @@ def enableVerboseLogging():
     global VERBOSE
     VERBOSE = True
 
+def isVerboseLogging():
+    return VERBOSE
+
 def note(msg):
     print(msg)
 
